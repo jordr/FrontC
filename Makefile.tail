@@ -101,6 +101,3 @@ $(DEP_DIR)/%.mli.d: %.mli $(DEP_DIR)
 
 $(DEP_DIR)/%.d: %.ml $(DEP_DIR)
 	@$(OCAMLDEP) $< | sed -e 's/^\(.*\)\.cmx:\(.*\).cmx/\1.cmx:\2.cmi/g' > $@
-
-test:
-	@echo $(_DEPS)
