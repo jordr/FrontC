@@ -20,4 +20,14 @@ $(eval $(call ocaml_prog,calipso,$(SOURCES)))
 
 $(eval $(call ocaml_prog,calipso_stat,$(STAT_SOURCES)))
 
+test: test_rk
+TMP = /tmp/calipso.out
+
+test_rk:
+	@echo -n "TEST: regular switches ... "
+	@./calipso -rk test/switch_reg.c > $(TMP)
+	@diff test/switch_reg.out $(TMP)
+	@rm $(TMP)
+	@echo "DONE"
+
 include ../Makefile.tail

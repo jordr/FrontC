@@ -133,11 +133,13 @@ let rec set_pure stat fct =
 let rec is_branch stat =
 	match stat with
 	GOTO _ | BREAK | CONTINUE | RETURN _ -> true
-	| SEQUENCE (_, stat') -> is_branch stat'
+	| SEQUENCE (stat1, stat2) -> (is_branch stat1) || (is_branch stat2)
 	| IF (_, stat1, stat2) -> (is_branch stat1) && (is_branch stat2)
 	| LABEL (_, stat') -> is_branch stat'
 	| CASE (_, stat') -> is_branch stat'
 	| DEFAULT stat' -> is_branch stat'
+	| BLOCK (_, stat') -> is_branch stat'
+	| STAT_LINE (stat', _, _) -> is_branch stat'
 	| _ -> false
 
 
