@@ -165,13 +165,17 @@ let keywords =
 		("if", fun _ -> IF (curfile(), curline()));
 		("else", fun _ -> ELSE (curfile(), curline()));
 		("asm", id ASM);
+		
+		(* C99 : add an option *)
+		("inline", id INLINE);
 	]
 
 (*** Specific GNU ***)
 let gnu_keywords : (string * (unit -> Cparser.token)) list = [
 		("__attribute__", id ATTRIBUTE);
 		("__extension__", id EXTENSION);
-		("__inline", id INLINE)
+		("__inline", id INLINE);	(* strange: really ? *)
+		("__inline__", id INLINE)
 	]
 
 let init_lexicon _ =
