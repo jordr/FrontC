@@ -97,6 +97,7 @@ let unindent _ =
 			
 let space _ = commit ()
 
+
 let print str =
 	current := !current ^ str;
 	current_len := !current_len + (String.length str);
@@ -152,6 +153,16 @@ let escape_string str =
 			res ^ (build (idx + 1)) in
 	build 0	
 
+
+(** Print a line like '#line line "file"'
+	@param file	Source file.
+	@param line	Line in the source file.
+ *)
+let print_line file line =
+	new_line();
+	Printf.fprintf !out "#line %d \"%s\"\n" line (escape_string file)
+
+
 let rec has_extension attrs =
 	match attrs with
 	  [] -> false
@@ -175,9 +186,14 @@ let get_size siz =
 	| LONG -> "long "
 	| LONG_LONG -> "long long "
 
-let rec print_base_type typ =
+
+(** Print a base type, that is, the part before pointer, function or array declaration.
+	@param type	Type to display.
+	@param var	Is it a variable display ? 
+ *)
+let rec print_base_type typ var =
 	match typ with
-	NO_TYPE -> ()
+	NO_TYPE -> if var then print "int"
 	| VOID -> print "void"
 	| CHAR sign -> print ((get_sign sign) ^ "char")
 	| INT (size, sign) -> print ((get_sign sign) ^ (get_size size) ^ "int")
@@ -188,15 +204,15 @@ let rec print_base_type typ =
 	| ENUM (id, items) -> print_enum id items
 	| STRUCT (id, flds) -> print_fields ("struct " ^ id) flds
 	| UNION (id, flds) -> print_fields ("union " ^ id) flds
-	| PROTO (typ, _, _) -> print_base_type typ
-	| OLD_PROTO (typ, _, _) -> print_base_type typ
-	| PTR typ -> print_base_type typ
-	| RESTRICT_PTR typ -> print_base_type typ
-	| ARRAY (typ, _) -> print_base_type typ
-	| CONST typ -> print_base_type typ
-	| VOLATILE typ -> print_base_type typ
-	| GNU_TYPE (attrs, typ) ->  print_attributes attrs; print_base_type typ
-	| TYPE_LINE (_, _, _type) -> print_base_type _type
+	| PROTO (typ, _, _) -> print_base_type typ var
+	| OLD_PROTO (typ, _, _) -> print_base_type typ var
+	| PTR typ -> print_base_type typ var
+	| RESTRICT_PTR typ -> print_base_type typ var
+	| ARRAY (typ, _) -> print_base_type typ var
+	| CONST typ -> print_base_type typ var
+	| VOLATILE typ -> print_base_type typ var
+	| GNU_TYPE (attrs, typ) ->  print_attributes attrs; print_base_type typ var
+	| TYPE_LINE (_, _, _type) -> print_base_type _type var
 	
 and print_fields id (flds : name_group list) =
 	print id;
@@ -244,6 +260,7 @@ and get_base_type typ =
 	| CONST typ -> get_base_type typ
 	| VOLATILE typ -> get_base_type typ
 	| ARRAY (typ, _) -> get_base_type typ
+	| TYPE_LINE (_, _, typ) -> get_base_type typ
 	| _ -> typ
 	
 and print_pointer typ =
@@ -255,16 +272,19 @@ and print_pointer typ =
 	| CONST typ -> print_pointer typ; print " const "
 	| VOLATILE typ -> print_pointer typ; print " volatile "
 	| ARRAY (typ, _) -> print_pointer typ
+	| TYPE_LINE (_, _, typ) -> print_pointer typ
 	| _ -> (*print_base_type typ*) ()
 
 and print_array typ =
 	match typ with
-	ARRAY (typ, dim) ->
+	  ARRAY (typ, dim) ->
 		print_array typ; 
 		print "[";
 		print_expression dim 0;
 		print "]"
+	| TYPE_LINE (_, _, typ) -> print_array typ
 	| _ -> ()
+
 
 (**	Print a type.
 	@param fct	Function called to display the name of the.
@@ -273,7 +293,7 @@ and print_array typ =
 and print_type (fct : unit -> unit) (typ : base_type ) =
 	let base = get_base_type typ in
 	match base with
-	BITFIELD (_, exp) -> fct (); print " : "; print_expression exp 1
+	  BITFIELD (_, exp) -> fct (); print " : "; print_expression exp 1
 	| PROTO (typ', pars, ell) ->
 		print_type
 			(fun _ ->
@@ -298,10 +318,11 @@ and print_type (fct : unit -> unit) (typ : base_type ) =
 				print_old_params pars ell;
 				print ")")
 			typ'
+	| TYPE_LINE (_, _, typ) -> print_type fct typ
 	| _ -> print_pointer typ; fct (); print_array typ
 
 and print_onlytype typ =
-	print_base_type typ;
+	print_base_type typ true;
 	print_type (fun _ -> ()) typ
 
 and print_name ((id, typ, attr, exp) : name) =
@@ -333,21 +354,26 @@ and print_name_group (typ, sto, names) =
 		print (get_storage sto);
 		space ()
 	end;
-	print_base_type typ;
+	print_base_type typ true;
 	space ();
 	print_commas false print_name names
 
-and print_single_name (typ, sto, name) =
+
+(** Print a single name, that is, either a prototype, or a parameter.
+	@param (typ, sto, name)	Single name to display.
+	@param	Is it a parameter display ?
+ *)
+and print_single_name (typ, sto, name) param =
 	if sto <> NO_STORAGE then begin
 		print (get_storage sto);
 		space ()
 	end;
-	print_base_type typ;
+	print_base_type typ param;
 	space ();
 	print_name name
 
 and print_params (pars : single_name list) (ell : bool) =
-	print_commas false print_single_name pars;
+	print_commas false (fun par -> print_single_name par true) pars;
 	if ell then print (if pars = [] then "..." else ", ...") else ()
 
 and print_old_params pars ell =
@@ -639,7 +665,8 @@ and print_statement stat =
 			print_commas false print mods
 		end;
 		print ");"
-	| STAT_LINE (stat, _, _) ->
+	| STAT_LINE (stat, file, line) ->
+		print_line file line;
 		print_statement stat
 
 and print_gnu_asm_arg (id, desc, exp) =
@@ -723,12 +750,12 @@ and print_def def =
 	match def with
 	
 	FUNDEF (proto, body) ->
-		print_single_name proto;
+		print_single_name proto false;
 		let (decs, stat) = body in print_statement (BLOCK (decs, stat));
 		force_new_line ();
 		
 	| OLDFUNDEF (proto, decs, body) ->
-		print_single_name proto;
+		print_single_name proto false;
 		force_new_line ();
 		List.iter
 			(fun dec -> print_name_group dec; print ";"; new_line ())
