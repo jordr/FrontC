@@ -46,6 +46,8 @@ let remove_goto = ref false
 let preproc = ref ""
 let verbose_mode = ref false
 let stat_display = ref false
+let args : Frontc.parsing_arg list ref = ref []
+
 let standard_remove _ =
 	Reduce.remove_break := true;
 	Reduce.remove_continue := true;
@@ -79,7 +81,8 @@ let arg_def =
 	"-t", Arg.Unit subtle_remove, "Set -rg, -rb, -rc, -rr, -rk options.";
 	"-sl", Arg.Unit (fun _ -> Algo.strategy := Algo.LEFT), "Organize sequences to the left";
 	"-sr", Arg.Unit (fun _ -> Algo.strategy := Algo.RIGHT), "Organize sequences to the right";
-	"-sw", Arg.Unit (fun _ -> Algo.strategy := Algo.WEIGHTED), "Organize sequences using the weight system"
+	"-sw", Arg.Unit (fun _ -> Algo.strategy := Algo.WEIGHTED), "Organize sequences using the weight system";
+	"-l", Arg.Unit (fun _ -> args := (Frontc.LINE_RECORD true)::!args), "Preserve line numbers"
 
 ]
 
@@ -175,7 +178,8 @@ let display_stats _ =
 let process filename =
 	let parse file =
 		let _ = if !verbose_mode then prerr_string "Parsing...\n" else () in
-		Frontc.parse_file file stderr in
+		(* Frontc.parse_file file stderr in *)
+		Frontc.parse ((Frontc.FROM_FILE file)::!args) in
 	match (
 		if !preproc = ""
 		then parse filename

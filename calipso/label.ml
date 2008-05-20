@@ -164,6 +164,7 @@ let rec find_labels stat =
 			(fun (csts, seq) labs -> List.append (find_labels seq) labs)
 			cases
 			[]
+	| (_, _, LINE (stat, _, _)) -> find_labels stat
 	| _ -> []
 	
 

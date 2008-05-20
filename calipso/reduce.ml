@@ -472,7 +472,7 @@ let reduce ((decs, stat) : body) (typ : base_type) : body =
 	else
 		let rec remove_last_return stat = 
 			match stat with
-			RETURN exp -> (NOP, exp)
+			  RETURN exp -> (NOP, exp)
 			| SEQUENCE (stat', RETURN exp) -> (stat', exp)
 			| SEQUENCE (s1, s2) ->
 				let (stat', rtn_val) = remove_last_return s2 in
@@ -480,7 +480,19 @@ let reduce ((decs, stat) : body) (typ : base_type) : body =
 			| LABEL (lbl, stat') -> 
 				let (stat'', rtn_val) = remove_last_return stat' in
 				(LABEL (lbl, stat''), rtn_val)
+			| STAT_LINE (stat, file, line) ->
+				let (stat', exp) = remove_last_return stat in
+				(STAT_LINE (stat', file, line), exp)
 			| _ -> (stat, NOTHING) in
+		
+		let rec reinsert_last_return stat ret =
+			match stat with
+			  NOP -> ret
+			| SEQUENCE (stat', RETURN _) -> assert false
+			| SEQUENCE (s1, s2) -> SEQUENCE (s1, reinsert_last_return s2 ret)
+			| LABEL (lbl, stat') ->  LABEL (lbl, reinsert_last_return stat' ret)
+			| STAT_LINE (stat, file, line) -> STAT_LINE (reinsert_last_return stat ret, file, line)
+			| _ -> SEQUENCE (stat, ret) in
 		
 		let (stat', rtn_val) = remove_last_return stat in
 		let (stat'', (_, _, _, rtn_lbl)) =
@@ -500,5 +512,5 @@ let reduce ((decs, stat) : body) (typ : base_type) : body =
 			(if (rtn_lbl = "") || (typ = VOID)
 				then decs
 				else (dec_var return typ NOTHING)::decs),
-			sequence stat'' last_ins
+			reinsert_last_return stat'' last_ins
 		)
