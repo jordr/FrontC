@@ -38,6 +38,8 @@ let opts = [
 		"Pass this definition to the preprocessor.");
 	("-U", Arg.String (fun undef -> args := (UNDEF undef) :: !args),
 		"Pass this undefinition to the preprocessor.");
+	("-l", Arg.Unit (fun _ -> args := (LINE_RECORD true)::!args),
+		"Generate #line directive.");
 	("--", Arg.Set from_stdin,
 		"Takes input from standard input.");
 ]
@@ -67,7 +69,8 @@ let _ =
 		if !from_stdin || !files = []
 		then process !args
 		else
-			List.iter (fun file -> process ((FROM_FILE file) :: !args)) !files in
+			List.iter (fun file ->
+				process ((FROM_FILE file)::!args)) !files in
 
 	(* Close the output if needed *)
 	if close then close_out output
