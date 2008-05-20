@@ -15,6 +15,7 @@ STAT_SOURCES = \
 
 OCAML_INC += ../frontc
 OCAML_LIB += unix ../frontc/frontc
+DIST += test/*.c test/*.out
 
 $(eval $(call ocaml_prog,calipso,$(SOURCES)))
 
