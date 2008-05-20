@@ -38,9 +38,8 @@ let version = "Cparser V3.0b 10.9.99 Hugues Cassé"
 let parse_error _ =
 	Clexer.display_error "Syntax error" (Parsing.symbol_start ()) (Parsing.symbol_end ())
 
-(*let fatal _ =
-	Clexer.display_error "fatal error" (Parsing.symbol_start ()) (Parsing.symbol_end
-	())*)
+let fatal _ =
+	Clexer.display_error "fatal error" (Parsing.symbol_start ()) (Parsing.symbol_end ())
 
 
 (*
@@ -368,6 +367,8 @@ global_dec:
 |		LPAREN global_dec RPAREN LPAREN old_parameters RPAREN
 			{(fst $2, set_type (OLD_PROTO (NO_TYPE, fst $5, snd $5)) (snd $2))}
 ;
+
+
 global_proto:
 		global_dec opt_gcc_attributes
 			{match (snd $1) with
@@ -380,12 +381,11 @@ old_proto:
 		global_dec opt_gcc_attributes
 			{match (snd $1) with
 				  OLD_PROTO _ -> (fst $1, snd $1, $2, NOTHING)
-				(*| PROTO (typ, [], ell) -> fst $1, OLD_PROTO (typ, [], ell), $2, NOTHING*)
+				| PROTO (typ, [], ell) ->
+					assert false(*fst $1, OLD_PROTO (typ, [], ell), $2, NOTHING*)
 				| _ -> begin
-					(*fatal();
-					Cprint.print_type (fun _ -> ()) (snd $1);
-					print_string ("[" ^ !Cprint.line ^ "]");*)
-					assert false
+					parse_error ();
+					raise Parsing.Parse_error
 				end }
 ;
 
@@ -402,7 +402,7 @@ old_pardecs:
 ;
 
 old_pardefs:
-		old_pardef						{[$1]}
+		old_pardef						{ [$1]}
 |		old_pardefs old_pardef			{$2::$1}
 ;
 old_pardef:
