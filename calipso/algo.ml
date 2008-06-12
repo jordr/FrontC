@@ -36,6 +36,7 @@ let rec linearize stat =
 		List.append (linearize n1) (linearize n2)
 	| (_, _, NOP) -> []
 	| (_, _, BLOCK ([], stat')) -> linearize stat'
+	| (_, _, LINE (stat, _, _)) -> linearize stat
 	| _ -> [stat]
 
 
