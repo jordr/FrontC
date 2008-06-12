@@ -95,6 +95,8 @@ let raw_switch_trans cnd stat hdl : statement * handle =
 			(SEQUENCE (ss1', ss2'), brk2)
 		| BLOCK (decs, ss) ->
 			let (ss', brk') = remove_break ss brk in (BLOCK (decs, ss'), brk')
+		| STAT_LINE (stat, file, line) ->
+			let (ss1', brk1) = remove_break stat brk in (STAT_LINE (ss1', file, line), brk1)
 		| _ -> (stat, brk) in
 	
 	let rec make_switch cases dflt =
@@ -139,6 +141,7 @@ let separated_switch_check stat =
 		| DOWHILE (_, s') -> is_unreachable s'
 		| FOR (_, _, _, s') -> is_unreachable s'
 		| LABEL (_, s') -> is_unreachable s'
+		| STAT_LINE (s, _, _) ->is_unreachable  s 
 		| SWITCH _
 		| _ -> true in
 
@@ -318,6 +321,7 @@ let rec transform (stat : statement) (hdl : handle) : statement * handle =
 	| BLOCK (decs, stat) ->
 		let (stat', hdl') = transform stat hdl in
 		(BLOCK (decs, stat'), hdl')
+
 		
 	| SEQUENCE (s1, s2) ->
 		let (s1', hdl') = transform s1 hdl in
@@ -491,7 +495,7 @@ let reduce ((decs, stat) : body) (typ : base_type) : body =
 			| SEQUENCE (stat', RETURN _) -> assert false
 			| SEQUENCE (s1, s2) -> SEQUENCE (s1, reinsert_last_return s2 ret)
 			| LABEL (lbl, stat') ->  LABEL (lbl, reinsert_last_return stat' ret)
-			| STAT_LINE (stat, file, line) -> STAT_LINE (reinsert_last_return stat ret, file, line)
+			| STAT_LINE (stat', file, line) -> STAT_LINE (reinsert_last_return stat' ret, file, line)
 			| _ -> SEQUENCE (stat, ret) in
 		
 		let (stat', rtn_val) = remove_last_return stat in

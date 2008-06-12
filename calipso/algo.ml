@@ -36,7 +36,6 @@ let rec linearize stat =
 		List.append (linearize n1) (linearize n2)
 	| (_, _, NOP) -> []
 	| (_, _, BLOCK ([], stat')) -> linearize stat'
-	| (_, _, LINE (stat, _, _)) -> linearize stat
 	| _ -> [stat]
 
 
@@ -203,6 +202,12 @@ let pass1 (nd : node) (labs : label_list) : node =
 			(BitField.union (BitField.diff g1 l2) (BitField.diff g2 l1),
 			BitField.union l1 l2,
 			SEQUENCE (n1, n2))
+(* debut moi*)
+		| (_, _, LINE (node, file, line)) -> 
+		let n = compute node in
+			let (goto, label, _) = n in
+			(goto, label, LINE ( n, file, line))
+(* fin moi *)
 		| (_, _, IF (cnd, s1, s2)) ->
 			let n1 = compute s1 in
 			let n2 = compute s2 in
@@ -444,6 +449,11 @@ let rec pass23 (nd : node) (labs : label_list) : node =
 
 		| (goto, label, BLOCK (decs, s)) ->
 			make (BLOCK (decs, transform s ins outs))
+(* debut moi*)
+		| (goto, label, LINE (s, file, line)) -> 
+		
+		make	( LINE ( transform s ins outs, file, line))
+(* fin moi *)
 			
 		| (goto, label, SEQUENCE (s1, s2)) ->
 			let rec do_it nd ins outs =

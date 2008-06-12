@@ -151,7 +151,6 @@ let rec remove_case stat =
 	CASE (_, stat') -> remove_case stat'
 	| DEFAULT stat' -> remove_case stat'
 	| LABEL (lbl, stat') -> LABEL (lbl, remove_case stat')
-	| STAT_LINE (stat', file, line) -> STAT_LINE(remove_case stat', file, line)
 	| _ -> stat
 
 
@@ -166,6 +165,7 @@ let rec remove_break stat =
 	| LABEL (lbl, stat') -> LABEL (lbl, remove_break stat')
 	| BLOCK (decs, stat') -> BLOCK (decs, remove_break stat')
 	| SEQUENCE (stat1, stat2) -> SEQUENCE (stat1, remove_break stat2)
+	| STAT_LINE (stat1, f, l) -> STAT_LINE (remove_break stat1, f, l) 
 	| IF (cnd, stat1, stat2) -> IF (cnd, remove_break stat1, remove_break stat2)
 	| _ -> stat
 
