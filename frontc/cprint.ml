@@ -676,23 +676,37 @@ and print_gnu_asm_arg (id, desc, exp) =
 	print ("\"")
 
 and print_substatement stat =
-	match stat with
-	IF _
-	| SEQUENCE _
-	| DOWHILE _ ->
-		new_line ();
-		print "{";
-		indent ();
-		print_statement stat;
-		unindent ();
-		print "}";
-		new_line ();
-	| BLOCK _ ->
+
+	let rec is_sequence stat =
+		match stat with
+		  SEQUENCE _ | DOWHILE _ | IF _ -> true
+		| STAT_LINE (stat, _, _) -> is_sequence stat
+		| _ -> false in
+	
+	let rec is_block stat =
+		match stat with
+		  BLOCK _ -> true
+		| STAT_LINE (stat, _, _) -> is_block stat
+		| _ -> false in
+	
+	if is_sequence stat then
+		begin
+			new_line ();
+			print "{";
+			indent ();
+			print_statement stat;
+			unindent ();
+			print "}";
+			new_line ()
+		end
+	else if is_block stat then
 		print_statement stat
-	| _ ->
-		indent ();
-		print_statement stat;
-		unindent ()
+	else
+		begin
+			indent ();
+			print_statement stat;
+			unindent ()
+		end
 
 
 (*
