@@ -15,3 +15,7 @@ typedef volatile struct t t10;
 
 typedef struct t const t11;
 typedef struct t volatile t12;
+
+extern const x;
+extern volatile x;
+extern const volatile x;
