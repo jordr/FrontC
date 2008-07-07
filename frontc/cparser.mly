@@ -73,7 +73,8 @@ let apply_mod (typ, sto) modi =
 		| _ -> raise BadModifier in
 	let check_access typ =
 		match typ with
-		PROTO _ | OLD_PROTO _ | CONST _ | VOLATILE _ -> false
+		(* hmm... "const" and "volatile" together seems to be valid *)
+		PROTO _ | OLD_PROTO _ (*| CONST _ | VOLATILE _*) -> false
 		| _ -> true in
 	match modi with
 	  BASE_SIGN _ -> (mod_root typ, sto)
