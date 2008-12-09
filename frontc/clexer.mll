@@ -275,7 +275,7 @@ let floatraw = (intnum? fraction)
 let floatnum = floatraw floatsuffix?
 
 let ident = (letter|'_')(letter|decdigit|'_')* 
-let blank = [' ' '\t' '\n']
+let blank = [' ' '\t' '\n' '\r']
 let escape = '\\' _
 let hex_escape = '\\' ['x' 'X'] hexdigit hexdigit
 let oct_escape = '\\' octdigit  octdigit octdigit
