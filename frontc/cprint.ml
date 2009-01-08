@@ -20,6 +20,8 @@
 **	2.1e	9.1.99	Hugues Cassé	Fix, recognize and correctly display '\0'.
 *)
 
+(** Pretty printer for C source loaded with FrontC. *)
+
 open Cabs
 let version = "Cprint 2.1e 9.1.99 Hugues Cassé"
 
@@ -188,7 +190,7 @@ let get_size siz =
 
 
 (** Print a base type, that is, the part before pointer, function or array declaration.
-	@param type	Type to display.
+	@param typ	Type to display.
 	@param var	Is it a variable display ? 
  *)
 let rec print_base_type typ var =

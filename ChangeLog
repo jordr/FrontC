@@ -1,3 +1,7 @@
+2008-05-20 casse	<casse@irit.fr>
+Full support of line information rewriting in PrintC.
+Support of line information in Calipso.
+
 2008-04-01 casse	<casse@irit.fr>
 Fixed bug preventing to parser "typedef TYPE (const|volatile) ...".
 Fixed bug preventing regular switch with complex cases to be kept.

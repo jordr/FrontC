@@ -21,19 +21,16 @@ let version = "FrontC 2.1 2.18.04 Hugues Cassé"
 open Cabs
 
 
-(**
- * FrontC is an OCAML library providing facilities for parsing source file
- * in C language.
- *
- * Although it is designed for parsing ANSI C, it provides also support for
- * old K&R C style and for some GCC extensions.
- *
- * It provides also a limited degraded mode allowing to parse file although
- * all type information is not available and preprocessor directives are still
- * in the source.
- *
- * @author Hugues Cassé <hugues.casse\@laposte.net>
- *)
+(** FrontC is an OCAML library providing facilities for parsing source file
+	in C language.
+
+	Although it is designed for parsing ANSI C, it provides also support for
+	old K&R C style and for some GCC extensions.
+
+	It provides also a limited degraded mode allowing to parse file although
+	all type information is not available and preprocessor directives are still
+	in the source.
+	@author Hugues Cassé <hugues.casse\@laposte.net> *)
 
 (* !!TODO!!
 	Add option support:
