@@ -9,7 +9,6 @@ SOURCES = \
 	clexer.mll \
 	cparser.mly \
 	ctoxml.ml \
-	cutil.ml \
 	frontc.ml
 OCAMLYACC_FLAGS = -v
 
