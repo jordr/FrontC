@@ -24,7 +24,6 @@ DOCS = \
 	cxml.ml \
 	cprint.ml \
 	ctoxml.ml \
-	cutil.ml \
 	frontc.ml 
 
 DOC_FLAGS=-colorize-code -I .
