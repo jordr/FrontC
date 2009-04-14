@@ -162,7 +162,7 @@ let escape_string str =
  *)
 let print_line file line =
 	new_line();
-	Printf.fprintf !out "#line %d \"%s\"\n" line (escape_string file)
+	Printf.fprintf !out "# %d \"%s\"\n" line (escape_string file)
 
 
 let rec has_extension attrs =

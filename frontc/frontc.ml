@@ -40,6 +40,23 @@ open Cabs
  *)
 
 
+(** Thrown if there is an error during load of sources. *)
+exception LoadError of string
+
+(* hash table *)
+module HashString =
+struct
+	type t = string
+	let equal (s1 : t) (s2 : t) = s1 = s2
+	let hash (s : t) = Hashtbl.hash s
+end
+module StringHashtbl = Hashtbl.Make(HashString)
+
+
+(** Symbol hash table. *)
+type symtab = Cabs.definition StringHashtbl.t
+
+
 (**
  * Parameters for building the reader handler.
  *)
@@ -283,3 +300,37 @@ let parse_file (file_name : string) (out : out_channel) : parsing_result =
 			("Error while opening " ^ file_name
 			^ ": " ^ msg ^ "\n");
 		PARSING_ERROR
+
+
+(** Parse the given list and link them together, that is,
+	produce for each the resolved symbol table.
+	@param files		List of files to parse.
+	@param args			Arguments to apply.
+	@raise LoadError	Thrown if there is a parse or a link error. *)
+let parse_and_link files args =
+
+	let parse file =
+		match parse ((FROM_FILE file)::args) with
+		  PARSING_ERROR -> raise (LoadError ("parsing error of " ^ file))
+		| PARSING_OK defs -> defs in
+	
+	let collect_globals tab def =
+		match def with
+		| Cabs.FUNDEF ((_, Cabs.EXTERN, _), _) -> ()
+		| Cabs.FUNDEF ((_, _, _), ([], Cabs.NOP)) -> ()
+		| Cabs.FUNDEF ((_, _, (name, _, _, _)), _) -> StringHashtbl.add tab name def
+		| Cabs.OLDFUNDEF ((_, Cabs.EXTERN, _), _, _) -> ()
+		| Cabs.OLDFUNDEF ((_, _, _), _, ([], Cabs.NOP)) -> ()
+		| Cabs.OLDFUNDEF ((_, _, (name, _, _, _)), _, _) -> StringHashtbl.add tab name def
+		| Cabs.DECDEF _ -> ()
+		| Cabs.TYPEDEF _ -> ()
+		| Cabs.ONLYTYPEDEF _ -> () in
+		
+	let files = List.map parse files in
+	let tab = StringHashtbl.create 251 in
+	List.iter (fun defs -> List.iter (collect_globals tab) defs) files
+
+		
+
+
+
