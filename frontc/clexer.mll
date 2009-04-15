@@ -276,6 +276,7 @@ let floatnum = floatraw floatsuffix?
 
 let ident = (letter|'_')(letter|decdigit|'_')* 
 let blank = [' ' '\t' '\n' '\r']
+let space = [' ' '\t']
 let escape = '\\' _
 let hex_escape = '\\' ['x' 'X'] hexdigit hexdigit
 let oct_escape = '\\' octdigit  octdigit octdigit
@@ -285,6 +286,7 @@ rule initial =
 	|		"//"			{test_gcc (); let _ = line_comment lexbuf in initial lexbuf }
 	|		blank			{initial lexbuf}
 	|		'#'				{line lexbuf}
+	|		'#' space* "line"	{ line lexbuf }
 	
 	|		'\''			{CST_CHAR (chr lexbuf)}
 	|		'"'				{CST_STRING (str lexbuf)} 
