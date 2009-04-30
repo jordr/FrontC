@@ -9,4 +9,6 @@ OCAML_LIB += unix ../frontc/frontc
 
 $(eval $(call ocaml_prog,printc,$(SOURCES)))
 
+printc_bin.cmo: ../frontc/*.cmo
+
 include ../Makefile.tail

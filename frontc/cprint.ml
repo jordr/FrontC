@@ -280,10 +280,10 @@ and print_pointer typ =
 and print_array typ =
 	match typ with
 	  ARRAY (typ, dim) ->
-		print_array typ; 
 		print "[";
 		print_expression dim 0;
-		print "]"
+		print "]";
+		print_array typ
 	| TYPE_LINE (_, _, typ) -> print_array typ
 	| _ -> ()
 
