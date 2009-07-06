@@ -9,6 +9,8 @@ SOURCES = \
 	clexer.mll \
 	cparser.mly \
 	ctoxml.ml \
+	rename.ml \
+	mergec.ml \
 	frontc.ml
 OCAMLYACC_FLAGS = -v
 
@@ -24,6 +26,8 @@ DOCS = \
 	cxml.ml \
 	cprint.ml \
 	ctoxml.ml \
+	rename.ml \
+	mergec.ml \
 	frontc.ml 
 
 DOC_FLAGS=-colorize-code -I .
