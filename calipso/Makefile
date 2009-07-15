@@ -3,15 +3,10 @@
 include ../Makefile.head
 
 SOURCES = \
-	gen.ml \
-	reduce.ml \
-	label.ml \
-	algo.ml \
-	calipso.ml
+	calipso_bin.ml
 	
 STAT_SOURCES = \
-	gen.ml \
-	reduce.ml
+	stat.ml
 
 OCAML_INC += ../frontc
 OCAML_LIB += unix ../frontc/frontc

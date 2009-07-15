@@ -1,7 +1,7 @@
 (* TCL -- Calipso command file.
 **
 ** Project: 		Calipso
-** File: 			calipso.ml
+** File: 			calipso_bin.ml
 ** Version:			3.0
 ** Date:			7.20.99
 ** Author:			Hugues Cassé
@@ -45,43 +45,49 @@ let add_file filename =
 let remove_goto = ref false
 let preproc = ref ""
 let verbose_mode = ref false
+let use_mask = ref false
 let stat_display = ref false
 let args : Frontc.parsing_arg list ref = ref []
+let remove_break = ref false
+let remove_continue = ref false
+let remove_return = ref false
+let remove_switch = ref Reduce.NO
+let strategy = ref Algo.LEFT
 
 let standard_remove _ =
-	Reduce.remove_break := true;
-	Reduce.remove_continue := true;
-	Reduce.remove_return := true;
-	Reduce.remove_switch := Reduce.REDUCE;
+	remove_break := true;
+	remove_continue := true;
+	remove_return := true;
+	remove_switch := Reduce.REDUCE;
 	remove_goto := true
 let subtle_remove _ =
-	Reduce.remove_break := true;
-	Reduce.remove_continue := true;
-	Reduce.remove_return := true;
-	Reduce.remove_switch := Reduce.KEEP;
-	remove_goto := true;
-	Algo.regular_switch := true
+	remove_break := true;
+	remove_continue := true;
+	remove_return := true;
+	remove_switch := Reduce.KEEP;
+	remove_goto := true
+
 let arg_def =
 [
 	"-V", Arg.Unit (fun _ -> print_endline help), "Informations";
 	"-v", Arg.Set verbose_mode, "Verbose mode";
 	"-o", Arg.String (fun filename -> set_output filename), "Output file";
-	"-m", Arg.Set Algo.use_mask, "Use bitfield masks to handle labels.";
+	"-m", Arg.Set use_mask, "Use bitfield masks to handle labels.";
 	"-p", Arg.String (fun id -> preproc := id), "Preprocessor command.";
 	"-s", Arg.Set stat_display, "Display statistics on control flow structures.";
 	"-P", Arg.Unit (fun _ -> preproc := "gcc -E %i -o %o"), "Use \"gcc -E %i -o %o\" as preprocessor.";
 	"-rg", Arg.Set remove_goto, "Remove the goto statements.";
-	"-rb", Arg.Set Reduce.remove_break, "Remove the break statements.";
-	"-rc", Arg.Set Reduce.remove_continue, "Remove the continue statements.";
-	"-rr", Arg.Set Reduce.remove_return, "Remove the return statements.";
-	"-rs", Arg.Unit (fun _ -> Reduce.remove_switch := Reduce.RAW), "Reduce rawly the switch statements.";
-	"-rk", Arg.Unit (fun _ -> Reduce.remove_switch := Reduce.KEEP; Algo.regular_switch := true), "Reduce the switch statements but keep the regular ones.";
-	"-rf", Arg.Unit (fun _ -> Reduce.remove_switch := Reduce.REDUCE), "Reduce the switch statements but use a faster method for regular ones.";
+	"-rb", Arg.Set remove_break, "Remove the break statements.";
+	"-rc", Arg.Set remove_continue, "Remove the continue statements.";
+	"-rr", Arg.Set remove_return, "Remove the return statements.";
+	"-rs", Arg.Unit (fun _ -> remove_switch := Reduce.RAW), "Reduce rawly the switch statements.";
+	"-rk", Arg.Unit (fun _ -> remove_switch := Reduce.KEEP), "Reduce the switch statements but keep the regular ones.";
+	"-rf", Arg.Unit (fun _ -> remove_switch := Reduce.REDUCE), "Reduce the switch statements but use a faster method for regular ones.";
 	"-r", Arg.Unit standard_remove, "Set -rg, -rb, -rc, -rr, -rf options.";
 	"-t", Arg.Unit subtle_remove, "Set -rg, -rb, -rc, -rr, -rk options.";
-	"-sl", Arg.Unit (fun _ -> Algo.strategy := Algo.LEFT), "Organize sequences to the left";
-	"-sr", Arg.Unit (fun _ -> Algo.strategy := Algo.RIGHT), "Organize sequences to the right";
-	"-sw", Arg.Unit (fun _ -> Algo.strategy := Algo.WEIGHTED), "Organize sequences using the weight system";
+	"-sl", Arg.Unit (fun _ -> strategy := Algo.LEFT), "Organize sequences to the left";
+	"-sr", Arg.Unit (fun _ -> strategy := Algo.RIGHT), "Organize sequences to the right";
+	"-sw", Arg.Unit (fun _ -> strategy := Algo.WEIGHTED), "Organize sequences using the weight system";
 	"-l", Arg.Unit (fun _ -> args := (Frontc.LINE_RECORD true)::!args), "Preserve line numbers"
 
 ]
@@ -110,38 +116,6 @@ let preprocess inname outname =
 	if (Sys.command com) = 0 
 		then ()
 		else raise PreprocessingError
-
-
-(* process_defs definition list -> definition list
-**		Remove "goto" and statement alike in the definition list.
-*)
-let rec process_defs (defs : Cabs.definition list) =
-	let process_func typ name body =
-		Gen.reset ();
-		let body' = Reduce.reduce body typ in
-		if !remove_goto then Algo.remove body' else body' in
-	match defs with
-	[] -> []
-	| (Cabs.FUNDEF ((base, sto, (id, proto, [], exp)), body))::fol ->
-		let _ = if !verbose_mode then prerr_string (id ^ "()\n") in
-		(match proto with
-		Cabs.PROTO (typ, pars, ell) ->
-			(Cabs.FUNDEF (
-				(base, sto, (id, proto, [], exp)),
-				process_func typ id body))
-			::(process_defs fol)
-		| _ -> raise InternalError)
-	| (Cabs.OLDFUNDEF ((base, sto, (id, proto, [], exp)), decs, body))::fol ->
-		let _ = if !verbose_mode then prerr_string (id ^ "()\n") in
-		(match proto with
-		Cabs.OLD_PROTO (typ, pars, ell) ->
-			(Cabs.OLDFUNDEF (
-				(base, sto, (id, proto, [], exp)),
-				decs,
-				process_func typ id body))
-		::(process_defs fol)
-		| _ -> raise InternalError)
-	| def::fol -> def::(process_defs fol)
 
 
 (* display_stats _ -> _
@@ -201,7 +175,11 @@ let process filename =
 		begin
 			Cprint.print
 				!out
-				(process_defs defs);
+				(Calipso.process_remove
+					defs (!verbose_mode) (!use_mask) (!remove_goto)
+					(!remove_break) (!remove_continue) (!remove_return)
+					(!remove_switch) (!strategy)
+				);
 			if !stat_display then display_stats ()
 		end
 	
