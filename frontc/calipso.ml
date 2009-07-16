@@ -18,6 +18,31 @@ exception InternalError
 (*
 ** Argument definition
 *)
+
+(** Constructor for Calipso options *)
+type option =
+	  Verbose
+		(** Switch on the verbose mode *)
+	| UseMask
+		(** Use bitfield masks to handle labels *)
+	| RemoveGoto
+		(** Remove the goto statements *)
+	| RemoveBreak
+		(** Remove the break statements *)
+	| RemoveContinue
+		(** Remove the continue statements *)
+	| RemoveReturn
+		(** Remove the return statements *)
+	| RemoveSwitch of Reduce.switch_action
+		(** Set the reducing method for switch statements
+			(Reduce.NO: don't reduce; Reduce.RAW: reduce rawly; Reduce.KEEP:
+			reduce but keep the regular ones; Reduce.REDUCE: use a faster
+			method for regular ones.) *)
+	| Strategy of Algo.strategy_kind
+		(** Set the algorithme strategy to organize sequences
+			(Algo.LEFT: organize sequences to the left; Algo.RIGHT: organize to
+			the right; Algo.WEIGHTED: use the weight) *)
+
 let rm_goto = ref false
 let verbose_mode = ref false
 
@@ -58,36 +83,43 @@ let rec process_defs (defs : Cabs.definition list) =
 	This function provide the full set of options.
 	
 	@param defs the definition list to be processed.
-	@param verbose switch to the verbose mode.
-	@param use_mask use bitfield masks to handle labels.
-	@param remove_goto Remove the goto statements.
-	@param remove_break Remove the break statements.
-	@param remove_continue Remove the continue statements.
-	@param remove_return Remove the return statements.
-	@param remove_switch Set the reducing method for switch statements
-			(Reduce.NO: don't reduce; Reduce.RAW: reduce rawly; Reduce.KEEP:
-			reduce but keep the regular ones; Reduce.REDUCE: use a faster
-			method for regular ones.)
-	@param strategy Set the algorithme strategy to organize sequences
-			(Algo.LEFT: organize sequences to the left; Algo.RIGHT: organize to
-			the right; Algo.WEIGHTED: use the weight)
+	@param options the option list.
 	@return the processed definition list.
 *)
-let process_remove (defs : Cabs.definition list) verbose use_mask
-			remove_goto remove_break remove_continue remove_return
-			(remove_switch : Reduce.switch_action)
-			(strategy : Algo.strategy_kind) =
-	begin
-		verbose_mode := verbose;
-		Algo.use_mask := use_mask;
-		rm_goto := remove_goto;
-		Reduce.remove_break := remove_break;
-		Reduce.remove_continue := remove_continue;
-		Reduce.remove_return := remove_return;
-		Reduce.remove_switch := remove_switch;
-		if remove_switch = Reduce.KEEP
-			then Algo.regular_switch := true;
-		Algo.strategy := strategy;
+let process_remove (defs : Cabs.definition list) options =
+	let rec set_option opt_list =
+		match opt_list with
+			| Verbose :: t ->
+				let _ = verbose_mode := true
+				in set_option t
+			| UseMask :: t ->
+				let _ = Algo.use_mask := true
+				in set_option t
+			| RemoveGoto :: t ->
+				let _ = rm_goto := true
+				in set_option t
+			| RemoveBreak :: t ->
+				let _ = Reduce.remove_break := true
+				in set_option t
+			| RemoveContinue :: t ->
+				let _ = Reduce.remove_continue := true
+				in set_option t
+			| RemoveReturn :: t ->
+				let _ = Reduce.remove_return := true
+				in set_option t
+			| RemoveSwitch(Reduce.KEEP) :: t ->
+				let _ = Reduce.remove_switch := Reduce.KEEP
+				in let _ = Algo.regular_switch := true
+				in set_option t
+			| RemoveSwitch(meth) :: t ->
+				let _ = Reduce.remove_switch := meth
+				in set_option t
+			| Strategy(strategy) :: t ->
+				let _ = Algo.strategy := strategy
+				in set_option t
+			| [] -> ()
+	in begin
+		set_option options;
 		process_defs defs;
 	end
 
@@ -97,7 +129,8 @@ let process_remove (defs : Cabs.definition list) verbose use_mask
 	@return the processed definition list.
 *)
 let process_standard_remove (defs : Cabs.definition list) =
-	process_remove defs false false true true true true Reduce.REDUCE Algo.LEFT
+	process_remove defs [RemoveGoto; RemoveBreak; RemoveContinue; RemoveReturn;
+							RemoveSwitch(Reduce.REDUCE); Strategy(Algo.LEFT)]
 
 (** Process a subtle remove, by removing goto, break, continue, return and
 	reducing switch with the Reduce.KEEP method.
@@ -105,5 +138,6 @@ let process_standard_remove (defs : Cabs.definition list) =
 	@return the processed definition list.
 *)
 let process_subtle_remove (defs : Cabs.definition list) =
-	process_remove defs false false true true true true Reduce.KEEP Algo.LEFT
+	process_remove defs [RemoveGoto; RemoveBreak; RemoveContinue; RemoveReturn;
+							RemoveSwitch(Reduce.KEEP); Strategy(Algo.LEFT)]
 
