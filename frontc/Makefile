@@ -10,6 +10,7 @@ SOURCES = \
 	cparser.mly \
 	ctoxml.ml \
 	mergec.ml \
+	sortrec.ml \
 	gen.ml \
 	reduce.ml \
 	label.ml \
@@ -31,6 +32,7 @@ DOCS = \
 	cprint.ml \
 	ctoxml.ml \
 	mergec.ml \
+	sortrec.ml \
 	calipso.ml \
 	frontc.ml 
 

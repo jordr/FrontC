@@ -4,7 +4,7 @@ include Makefile.head
 PROJECT=Frontc
 VERSION=3.4
 RELEASE=2
-SUBDIRS = frontc ctoxml printc calipso
+SUBDIRS = frontc ctoxml printc calipso mergec sortrec
 DIST+=AUTHORS ChangeLog COPYING INSTALL NEWS README
 
 include Makefile.tail
