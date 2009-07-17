@@ -97,7 +97,9 @@ let arg_def =
 					"Organize sequences to the right";
 	"-sw", Arg.Unit (fun _ -> calipso_options := Calipso.Strategy(Algo.WEIGHTED) :: !calipso_options),
 					"Organize sequences using the weight system";
-	"-l", Arg.Unit (fun _ -> args := (Frontc.LINE_RECORD true)::!args), "Preserve line numbers"
+	"-l", Arg.Unit (fun _ -> args := (Frontc.LINE_RECORD true)::!args), "Preserve line numbers";
+	"-rrec", Arg.Unit (fun _ -> calipso_options := Calipso.RemoveRecursive :: !calipso_options),
+					"Try to transform recursive function into for loops."
 
 ]
 

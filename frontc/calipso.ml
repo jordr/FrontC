@@ -42,9 +42,12 @@ type option =
 		(** Set the algorithme strategy to organize sequences
 			(Algo.LEFT: organize sequences to the left; Algo.RIGHT: organize to
 			the right; Algo.WEIGHTED: use the weight) *)
+	| RemoveRecursive
+		(** Transform (if possible) recursive function into loops (iftofor). *)
 
 let rm_goto = ref false
 let verbose_mode = ref false
+let rm_rec = ref false
 
 (* process_defs definition list -> definition list
 **		Remove "goto" and statement alike in the definition list.
@@ -117,11 +120,15 @@ let process_remove (defs : Cabs.definition list) options =
 			| Strategy(strategy) :: t ->
 				let _ = Algo.strategy := strategy
 				in set_option t
+			| RemoveRecursive :: t ->
+				let _ = rm_rec := true
+				in set_option t
 			| [] -> ()
-	in begin
-		set_option options;
-		process_defs defs;
-	end
+	in let _ = set_option options
+	in let defs = process_defs defs
+	in if (!rm_rec)
+		then (Iftofor.if_to_for defs)
+		else defs
 
 (** Process a standard remove, by removing goto, break, continue, return and
 	reducing switch with the Reduce.REDUCE method.

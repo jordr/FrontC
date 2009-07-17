@@ -11,6 +11,7 @@ SOURCES = \
 	ctoxml.ml \
 	mergec.ml \
 	sortrec.ml \
+	iftofor.ml \
 	gen.ml \
 	reduce.ml \
 	label.ml \
@@ -33,6 +34,7 @@ DOCS = \
 	ctoxml.ml \
 	mergec.ml \
 	sortrec.ml \
+	iftofor.ml \
 	calipso.ml \
 	frontc.ml 
 
