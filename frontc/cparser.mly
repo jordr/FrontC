@@ -29,7 +29,7 @@
 **	a							const and volatile accepted for basic types
 **								for fields and only-types.
 **	b	10.9.99	Hugues Cassé	Correct priorities of type algebra:
-**								()() > * > []. Add typalg.c for testing it.	
+**								()() > * > []. Add typalg.c for testing it.
 */
 %{
 open Cabs
@@ -115,7 +115,7 @@ let set_type tst tin =
 
 
 (*
-** Expression building 
+** Expression building
 *)
 let smooth_expression lst =
 	match lst with
@@ -132,11 +132,11 @@ let list_expression expr =
 (*** Named Building ***)
 let set_name (typ : base_type) (id, typ', attr, exp) =
 	(id, set_type typ typ', attr, exp)
-	
+
 let set_name_group (typ, sto) (lst : name list)
 : name_group =
 	(typ, sto, List.map (set_name typ) lst)
-	
+
 let set_single (typ, sto) name : single_name =
 	(typ, sto, set_name typ name)
 
@@ -341,8 +341,8 @@ global_def:
 			{(fst $1, snd $1, $2, $4)}
 ;
 global_dec:
-		IDENT 
-			{($1, set_tline NO_TYPE)}	
+		IDENT
+			{($1, set_tline NO_TYPE)}
 |		LPAREN global_dec RPAREN
 			{$2}
 |		STAR global_dec
@@ -359,7 +359,7 @@ global_dec:
 			{(fst $1, set_type (ARRAY (NO_TYPE, smooth_expression $3)) (snd $1))}
 |		global_dec LBRACKET RBRACKET
 			{(fst $1, set_type (ARRAY (NO_TYPE, NOTHING)) (snd $1))}
-|		global_dec LPAREN parameters RPAREN			
+|		global_dec LPAREN parameters RPAREN
 			{(fst $1, PROTO (snd $1, fst $3, snd $3))}
 |		LPAREN global_dec RPAREN LPAREN parameters RPAREN
 			{(fst $2, set_type (PROTO (NO_TYPE, fst $5, snd $5)) (snd $2))}
@@ -408,7 +408,7 @@ old_pardefs:
 ;
 old_pardef:
 		old_type old_defs SEMICOLON
-			{set_name_group $1 (List.rev $2)}	
+			{set_name_group $1 (List.rev $2)}
 ;
 old_type:
 		old_mods_opt NAMED_TYPE old_mods_opt
@@ -450,7 +450,7 @@ old_dec:
 			{(fst $1, set_type (ARRAY (NO_TYPE, smooth_expression $3)) (snd $1))}
 |		old_dec LBRACKET RBRACKET
 			{(fst $1, set_type (ARRAY (NO_TYPE, NOTHING)) (snd $1))}
-|		old_dec LPAREN parameters RPAREN				
+|		old_dec LPAREN parameters RPAREN
 			{(fst $1, PROTO (snd $1, fst $3, snd $3))}
 |		LPAREN old_dec RPAREN LPAREN parameters RPAREN
 			{(fst $2, set_type (PROTO (NO_TYPE, fst $5, snd $5)) (snd $2))}
@@ -472,7 +472,7 @@ local_type:
 |		local_mod_list_opt NAMED_TYPE local_mod_list_opt
 			{apply_mods $3 (apply_mods $1 (NAMED_TYPE $2, NO_STORAGE))}
 ;
-local_mod_list_opt:						
+local_mod_list_opt:
 		/* empty */						{[]}
 |		local_mod_list					{List.rev $1}
 ;
@@ -514,7 +514,7 @@ local_dec:
 |		STAR RESTRICT local_dec
 			{(fst $3, set_type (RESTRICT_PTR NO_TYPE) (snd $3))}
 |		STAR CONST local_dec
-			{(fst $3, set_type (CONST (PTR NO_TYPE)) (snd $3))}			
+			{(fst $3, set_type (CONST (PTR NO_TYPE)) (snd $3))}
 |		STAR VOLATILE local_dec
 			{(fst $3, set_type (VOLATILE (PTR NO_TYPE)) (snd $3))}
 |		STAR gcc_attributes local_dec
@@ -543,7 +543,7 @@ typedef_type:
 ;
 typedef_sub:
 		NAMED_TYPE						{(NAMED_TYPE $1, [])}
-|		comp_type						{($1, [])}		
+|		comp_type						{($1, [])}
 |		typedef_qual					{$1}
 		/* !!TODO!! Unknown named type support: add option for it */
 |		IDENT							{ Clexer.add_type $1; (NAMED_TYPE $1, [])}
@@ -603,7 +603,7 @@ field:
 		field_type field_defs SEMICOLON	{set_name_group $1 (List.rev $2)}
 ;
 field_type:
-	field_mod_list_opt field_qual 
+	field_mod_list_opt field_qual
 		{apply_mods (snd $2) (apply_mods $1 ((fst $2), NO_STORAGE))}
 |	field_mod_list_opt comp_type field_mod_list_opt
 		{apply_mods $3 (apply_mods $1 ($2, NO_STORAGE))}
@@ -623,13 +623,13 @@ field_mod:
 |		VOLATILE						{BASE_VOLATILE}
 |		gcc_attribute					{ BASE_GNU_ATTR $1 }
 ;
-field_qual:	
+field_qual:
 		qual_type						{$1}
 |		field_qual qual_type			{apply_qual $1 $2}
 |		field_qual field_mod			{(fst $1, $2::(snd $1))}
 ;
 field_defs:
-		field_defs COMMA field_def		{$3::$1}	
+		field_defs COMMA field_def		{$3::$1}
 |		field_def						{[$1]}
 ;
 field_def:
@@ -713,7 +713,7 @@ param_qual:
 ;
 param_def:
 		param_dec
-			{ let (name, _type) = $1 in (name, _type, [], NOTHING) } 
+			{ let (name, _type) = $1 in (name, _type, [], NOTHING) }
 ;
 param_dec:
 		/* empty */
@@ -727,7 +727,7 @@ param_dec:
 |		STAR RESTRICT param_dec
 			{(fst $3, set_type (RESTRICT_PTR NO_TYPE) (snd $3))}
 |		STAR CONST param_dec
-			{(fst $3, set_type (CONST (PTR NO_TYPE)) (snd $3))}			
+			{(fst $3, set_type (CONST (PTR NO_TYPE)) (snd $3))}
 |		STAR VOLATILE param_dec
 			{(fst $3, set_type (VOLATILE (PTR NO_TYPE)) (snd $3))}
 |		STAR gcc_attributes param_dec
@@ -741,7 +741,7 @@ param_dec:
 |		LPAREN param_dec RPAREN
 			{$2}
 ;
-		
+
 
 /*** Only-type Definition ***/
 only_type:
@@ -760,7 +760,7 @@ only_mod_list_opt:
 		/* empty */						{[]}
 |		only_mod_list					{List.rev $1}
 ;
-only_qual:	
+only_qual:
 		qual_type						{$1}
 |		only_qual qual_type				{apply_qual $1 $2}
 |		only_qual only_mod				{(fst $1, $2::(snd $1))}
@@ -785,7 +785,7 @@ only_dec:
 |		STAR RESTRICT only_dec
 			{set_type (RESTRICT_PTR NO_TYPE) $3}
 |		STAR CONST only_dec
-			{set_type (CONST (PTR NO_TYPE)) $3}			
+			{set_type (CONST (PTR NO_TYPE)) $3}
 |		STAR VOLATILE only_dec
 			{set_type (VOLATILE (PTR NO_TYPE)) $3}
 |		STAR gcc_attributes only_dec
@@ -815,21 +815,21 @@ qual_type:
 ;
 comp_type:
 		STRUCT type_name
-			{STRUCT ($2, [])}				
+			{STRUCT ($2, [])}
 |		STRUCT LBRACE field_list RBRACE
 			{STRUCT ("", List.rev $3)}
 |		STRUCT type_name LBRACE field_list RBRACE
 			{STRUCT ($2, List.rev $4)}
 |		UNION type_name
-			{UNION ($2, [])}						
-|		UNION LBRACE field_list RBRACE			
+			{UNION ($2, [])}
+|		UNION LBRACE field_list RBRACE
 			{UNION ("", List.rev $3)}
 |		UNION type_name LBRACE field_list RBRACE
 			{UNION ($2, List.rev $4)}
 |		ENUM type_name
-			{ENUM ($2, [])}					
+			{ENUM ($2, [])}
 |		ENUM LBRACE enum_list RBRACE
-			{ENUM ("", List.rev $3)}		
+			{ENUM ("", List.rev $3)}
 |		ENUM type_name LBRACE enum_list RBRACE
 			{ENUM ($2, List.rev $4)}
 ;
@@ -874,7 +874,7 @@ comma_expression:
 ;
 expression:
 		constant
-			{CONSTANT $1}		
+			{CONSTANT $1}
 |		IDENT
 			{VARIABLE $1}
 |		SIZEOF expression
@@ -946,7 +946,7 @@ expression:
 |		expression EXCLAM_EQ expression
 			{BINARY(NE ,$1 , $3)}
 |		expression INF expression
-			{BINARY(LT ,$1 , $3)}	
+			{BINARY(LT ,$1 , $3)}
 |		expression SUP expression
 			{BINARY(GT ,$1 , $3)}
 |		expression INF_EQ expression
@@ -956,32 +956,32 @@ expression:
 |		expression  INF_INF expression
 			{BINARY(SHL ,$1 , $3)}
 |		expression  SUP_SUP expression
-			{BINARY(SHR ,$1 , $3)}		
+			{BINARY(SHR ,$1 , $3)}
 |		expression EQ expression
 			{set_eline $2 (BINARY(ASSIGN ,$1 , $3))}
 |		expression PLUS_EQ expression
 			{set_eline $2 (BINARY(ADD_ASSIGN ,$1 , $3))}
-|		expression MINUS_EQ expression		
+|		expression MINUS_EQ expression
 			{set_eline $2 (BINARY(SUB_ASSIGN ,$1 , $3))}
-|		expression STAR_EQ expression		
+|		expression STAR_EQ expression
 			{set_eline $2 (BINARY(MUL_ASSIGN ,$1 , $3))}
-|		expression SLASH_EQ expression		
+|		expression SLASH_EQ expression
 			{set_eline $2 (BINARY(DIV_ASSIGN ,$1 , $3))}
-|		expression PERCENT_EQ expression	
+|		expression PERCENT_EQ expression
 			{set_eline $2 (BINARY(MOD_ASSIGN ,$1 , $3))}
-|		expression AND_EQ expression		
+|		expression AND_EQ expression
 			{set_eline $2 (BINARY(BAND_ASSIGN ,$1 , $3))}
-|		expression PIPE_EQ expression		
+|		expression PIPE_EQ expression
 			{set_eline $2 (BINARY(BOR_ASSIGN ,$1 , $3))}
-|		expression CIRC_EQ expression		
+|		expression CIRC_EQ expression
 			{set_eline $2 (BINARY(XOR_ASSIGN ,$1 , $3))}
-|		expression INF_INF_EQ expression	
+|		expression INF_INF_EQ expression
 			{set_eline $2 (BINARY(SHL_ASSIGN ,$1 , $3))}
 |		expression SUP_SUP_EQ expression
 			{set_eline $2 (BINARY(SHR_ASSIGN ,$1 , $3))}
 ;
 constant:
-		CST_INT							{CONST_INT $1}					
+		CST_INT							{CONST_INT $1}
 |		CST_FLOAT						{CONST_FLOAT $1}
 |		CST_CHAR						{CONST_CHAR $1}
 |		string_list						{CONST_STRING $1}
@@ -1020,7 +1020,7 @@ stats:
 ;
 statement:
 		SEMICOLON
-			{set_line $1 NOP}							
+			{set_line $1 NOP}
 |		comma_expression SEMICOLON
 			{set_line $2 (COMPUTATION (smooth_expression $1))}
 |		body
@@ -1039,13 +1039,13 @@ statement:
 		SEMICOLON opt_expression RPAREN statement
 			{set_line $1 (FOR ($3, $5, $7, $9))}
 |		IDENT COLON statement
-			{LABEL ($1, $3)}			
+			{LABEL ($1, $3)}
 |		CASE expression COLON statement
 			{set_line $1 (CASE ($2, $4))}
 |		DEFAULT COLON statement
-			{set_line $1 (DEFAULT $3)}		
+			{set_line $1 (DEFAULT $3)}
 |		RETURN SEMICOLON
-			{set_line $1 (RETURN NOTHING)}	
+			{set_line $1 (RETURN NOTHING)}
 |		RETURN expression SEMICOLON
 			{set_line $1 (RETURN $2)}
 |		BREAK SEMICOLON
@@ -1112,8 +1112,6 @@ gcc_attributes:
 gcc_attribute:
 	ATTRIBUTE LPAREN LPAREN opt_gnu_args RPAREN RPAREN
 		{ List.rev $4 }
-/*|	GNU_ATTRS
-		{ $1 }*/
 |	EXTENSION
 		{ [GNU_EXTENSION] }
 |	INLINE
@@ -1152,6 +1150,8 @@ gnu_id:
 			  [(Cabs.GNU_ID name)] -> name
 			| _ -> assert false
 		}
+|	CONST
+		{ "__const" }
 ;
 
 %%
