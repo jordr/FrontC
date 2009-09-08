@@ -300,6 +300,7 @@ global:
 			{let _ = List.iter (fun (id, _, _, _) -> Clexer.add_type id) $4 in
 			TYPEDEF (set_name_group (fst $3, snd $3) $4, $1)}
 ;
+
 global_type:
 		global_mod_list_opt global_qual
 			{apply_mods (snd $2) (apply_mods $1 ((fst $2), NO_STORAGE))}
@@ -335,9 +336,9 @@ global_defs:
 |		global_defs COMMA global_def	{$3::$1}
 ;
 global_def:
-		global_dec opt_gcc_attributes
+		global_dec opt_gcc_fun_attributes
 			{(fst $1, snd $1, $2, NOTHING)}
-|		global_dec opt_gcc_attributes EQ init_expression
+|		global_dec opt_gcc_fun_attributes EQ init_expression
 			{(fst $1, snd $1, $2, $4)}
 ;
 global_dec:
@@ -1153,6 +1154,15 @@ gnu_id:
 |	CONST
 		{ "__const" }
 ;
+
+opt_gcc_fun_attributes:
+	opt_gcc_attributes									{ $1 }
+|	opt_gcc_attributes asm_attribute opt_gcc_attributes	{ $1 @ $2 @ $3 }
+;
+
+asm_attribute:
+	ASM LPAREN string_list RPAREN
+		{ Clexer.test_gcc(); [GNU_CALL("__asm__", [GNU_CST (CONST_STRING $3)])] }
 
 %%
 

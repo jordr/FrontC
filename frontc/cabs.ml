@@ -69,7 +69,7 @@ and base_type =
 	| UNION of string * name_group list
 		(** "union" of the given name (may be empty) with given fields (may also be empty) *)
 	| PROTO of proto		(** Prototype of a function *)
-	| OLD_PROTO of old_proto	(** Old-style K&R prototype *)	
+	| OLD_PROTO of old_proto	(** Old-style K&R prototype *)
 	| NAMED_TYPE of string		(** Named type coming from typedef *)
 	| ENUM of string * enum_item list
 		(** "union" of the given name (may be empty) with given values (may also be empty) *)
@@ -102,10 +102,10 @@ and proto = base_type * single_name list * bool
 (** Old-C K&R function prototype with root type, list of arguments and
  *	variable argument "..." boolean. *)
 and old_proto = base_type * string list * bool
- 
+
 
 (** Definitions found in a C file. *)
-and definition = 
+and definition =
 	FUNDEF of single_name * body
 		(** Definition of a function. *)
 	| OLDFUNDEF of single_name * name_group list * body
@@ -118,7 +118,7 @@ and definition =
 		(** Definition of lonely "struct", "union" or "enum". *)
 
 (** A C files is composed of C definitions *)
-and file = definition list				
+and file = definition list
 
 
 (** The body of a function is composed as a list of variable declaration
@@ -270,17 +270,16 @@ and gnu_attrs = gnu_attr list
 (** GNU special attribute. *)
 and gnu_attr =
 	  GNU_NONE
-	  	(** No attribute "()". *)
+	  	(** no attribute "()". *)
 	| GNU_CALL of string * gnu_attr list
-		(** Function call. *)
+		(** function call *)
 	| GNU_ID of string
-		(** Single identifier. *)
+		(** single identifier *)
 	| GNU_CST of constant
-		(** Constant value. *)
+		(** constant value *)
 	| GNU_EXTENSION
-		(** Support of __extension__ keyword *)
+		(** support of __extension__ keyword *)
 	| GNU_INLINE
-		(** Support of __inline keyword *)
-
+		(** support of __inline keyword *)
 
 

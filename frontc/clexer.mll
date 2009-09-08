@@ -52,7 +52,7 @@ let current_handle = ref {
 		h_out_channel = stdout;
 		h_file_name = "";
 		h_gcc = true;
-		h_linerec = false; 
+		h_linerec = false;
 	}
 
 let interactive (h : handle) = h.h_interactive
@@ -92,7 +92,7 @@ let display_error msg token_start token_end =
 	output_string (out_channel !current_handle) (
 		(if (interactive !current_handle)
 			then ""
-			else 
+			else
 				(file_name !current_handle) ^ "["
 				^ (string_of_int (lineno !current_handle)) ^ "] "
 		)
@@ -165,7 +165,7 @@ let keywords =
 		("if", fun _ -> IF (curfile(), curline()));
 		("else", fun _ -> ELSE (curfile(), curline()));
 		("asm", id ASM);
-		
+
 		(* C99 : add an option *)
 		("inline", id INLINE);
 	]
@@ -175,7 +175,8 @@ let gnu_keywords : (string * (unit -> Cparser.token)) list = [
 		("__attribute__", id ATTRIBUTE);
 		("__extension__", id EXTENSION);
 		("__inline", id INLINE);	(* strange: really ? *)
-		("__inline__", id INLINE)
+		("__inline__", id INLINE);
+		("__asm__", id ASM)
 	]
 
 let init_lexicon _ =
@@ -191,7 +192,7 @@ let context : string list list ref = ref []
 
 let push_context _ = context := []::!context
 
-let pop_context _ = 
+let pop_context _ =
 	match !context with
 	[] -> raise (InternalError "Empty context stack")
 	| con::sub ->
@@ -271,10 +272,10 @@ let fraction  = '.' decdigit+
 let floatraw = (intnum? fraction)
 			|(intnum exponent)
 			|(intnum? fraction exponent)
-			|(intnum '.') 
+			|(intnum '.')
 let floatnum = floatraw floatsuffix?
 
-let ident = (letter|'_')(letter|decdigit|'_')* 
+let ident = (letter|'_')(letter|decdigit|'_')*
 let blank = [' ' '\t' '\n' '\r']
 let space = [' ' '\t']
 let escape = '\\' _
@@ -287,9 +288,9 @@ rule initial =
 	|		blank			{initial lexbuf}
 	|		'#'				{line lexbuf}
 	|		'#' space* "line"	{ line lexbuf }
-	
+
 	|		'\''			{CST_CHAR (chr lexbuf)}
-	|		'"'				{CST_STRING (str lexbuf)} 
+	|		'"'				{CST_STRING (str lexbuf)}
 	|		floatnum		{CST_FLOAT (Lexing.lexeme lexbuf)}
 	|		hexnum			{CST_INT (Lexing.lexeme lexbuf)}
 	|		octnum			{CST_INT (Lexing.lexeme lexbuf)}
@@ -333,7 +334,7 @@ rule initial =
 	|		'?'				{QUEST(curfile(), curline())}
 	|		':'				{COLON(curfile(), curline())}
 	|		'~'				{TILDE}
-		
+
 	|		'{'				{LBRACE(curfile(), curline())}
 	|		'}'				{RBRACE(curfile(), curline())}
 	|		'['				{LBRACKET(curfile(), curline())}
@@ -345,7 +346,7 @@ rule initial =
 	|		'.'				{DOT}
 	|		"sizeof"		{SIZEOF}
 	|		ident			{scan_ident (Lexing.lexeme lexbuf)}
-	
+
 	|		eof				{EOF}
 	|		_				{display_error
 								"Invalid symbol"
@@ -386,7 +387,7 @@ and str =
 	|		"\\0"			{(String.make 1 (Char.chr 0)) ^ (str lexbuf)}
 	|		escape			{let cur = scan_escape (String.sub
 							(Lexing.lexeme lexbuf) 1 1) in cur ^ (str lexbuf)}
-	|		_				{let cur = Lexing.lexeme lexbuf in cur ^  (str lexbuf)} 
+	|		_				{let cur = Lexing.lexeme lexbuf in cur ^  (str lexbuf)}
 
 and chr =
 	parse	'\''			{""}
@@ -397,8 +398,8 @@ and chr =
 	|		"\\0"			{(String.make 1 (Char.chr 0)) ^ (chr lexbuf)}
 	|		escape			{let cur = scan_escape (String.sub
 							(Lexing.lexeme lexbuf) 1 1) in cur ^ (chr lexbuf)}
-	|		_				{let cur = Lexing.lexeme lexbuf in cur ^ (chr lexbuf)} 
-	
+	|		_				{let cur = Lexing.lexeme lexbuf in cur ^ (chr lexbuf)}
+
 {
 
 (*** get_buffer ***)
@@ -439,5 +440,5 @@ let get_buffer (hr : handle ref) (dst : string) (len : int) : int =
 *)
 let init hdl =
 	init_lexicon ();
-	current_handle := hdl 
+	current_handle := hdl
 }
