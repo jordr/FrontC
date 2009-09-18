@@ -1,4 +1,4 @@
-(* 
+(*
  *	$Id$
  *	Copyright (c) 2003, Hugues Cassé <hugues.casse@laposte.net>
  *
@@ -79,6 +79,10 @@ let rec convert_const c =
 	  	Cxml.new_elt "string" [] [Cxml.new_text v]
 	| CONST_COMPOUND exps ->
 		Cxml.new_elt "compound" [] (List.map convert_exp exps)
+	| RCONST_FLOAT f ->
+		Cxml.new_elt "float" [] [Cxml.new_text (string_of_float f)]
+	| RCONST_INT i ->
+		Cxml.new_elt "int" [] [Cxml.new_text (string_of_int i)]
 
 
 and convert_exp exp =
@@ -198,7 +202,7 @@ and convert_fields fields =
 			Cxml.new_elt "field" [("name", name)] [convert_type _type] in
 		List.map convert_name names in
 	List.flatten (List.map convert_names fields)
-	
+
 
 and convert_values values =
 	let convert_value (name, exp) =
@@ -213,7 +217,7 @@ and convert_proto _type =
 		  PROTO (_type, args, vararg) -> (_type, args, vararg)
 		| _ -> raise UnconsistentDef in
 	let relt = Cxml.new_elt "type" [] [convert_type rtype] in
-	
+
 	let convert_arg (_, store, (name, _type, _, _)) args =
 		if _type = VOID then args else
 		let elt = Cxml.new_elt "param"
@@ -225,7 +229,7 @@ and convert_proto _type =
 	let elts =
 		if not vararg then aelts
 		else List.append aelts [Cxml.new_elt "vararg" [] []] in
-		
+
 	relt :: elts
 
 
@@ -262,7 +266,7 @@ and convert_type _type =
 	| VOLATILE _type -> Cxml.new_elt "volatile" [] [convert_type _type]
 	| NAMED_TYPE name -> Cxml.new_elt "type" [("ref", name)] []
 	| RESTRICT_PTR _type -> Cxml.new_elt "restrict" [] [convert_type _type]
-	
+
 	| ARRAY  (_type, size) ->
 		Cxml.new_elt "array" [] [
 			convert_type _type;
@@ -274,25 +278,25 @@ and convert_type _type =
 		Cxml.new_elt "struct"
 			(if name <> "" then [(id, "struct:" ^ name)] else [])
 			(convert_fields fields)
-		
+
 	| UNION (name, fields) ->
 		let id = if fields = [] then "ref" else "id" in
 		Cxml.new_elt "union"
 			(if name <> "" then [(id, "union:" ^ name)] else [])
 			(convert_fields fields)
-	
+
 	| ENUM (name, values) ->
 		let id = if values = [] then "ref" else "id" in
 		Cxml.new_elt "enum"
 			(if name <> "" then [(id, "enum:" ^ name)] else [])
 			(convert_values values)
-	
+
 	| PROTO (_, _, _) ->
 		Cxml.new_elt "fun" [] (convert_proto _type)
-	
+
 	| OLD_PROTO (_, _, _) ->
 		Cxml.new_elt "fun" [] [Cxml.new_elt "vararg" [] []]
-	
+
 	| GNU_TYPE (attrs, _type) ->
 		Cxml.add_children (convert_type _type) (List.map convert_gnu_attr attrs)
 
@@ -320,7 +324,7 @@ and convert_fundef _type store name vars body =
 
 	let proto_elts = convert_proto _type in
 	let body_elt = Cxml.new_elt "body" [] (convert_block (vars, body)) in
-	
+
 	Cxml.new_elt "fundef"
 		[
 			("id", name);

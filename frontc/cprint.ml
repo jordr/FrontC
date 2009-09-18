@@ -88,7 +88,7 @@ let indent _ =
 		spaces := !tab;
 		roll := !roll + 1
 	end
-	
+
 let unindent _ =
 	new_line ();
 	spaces := !spaces - !tab;
@@ -96,7 +96,7 @@ let unindent _ =
 		spaces := ((!max_indent - 1) / !tab) * !tab;
 		roll := !roll - 1
 	end
-			
+
 let space _ = commit ()
 
 
@@ -109,7 +109,7 @@ let print str =
 		flush ();
 		output_char !out '\n';
 		if !follow = 0 then follow := !tab
-	end 
+	end
 
 
 (*
@@ -127,11 +127,11 @@ let print_commas nl fct lst =
 		false
 		lst in
 	()
-	
+
 
 let escape_string str =
 	let lng = String.length str in
-	let conv value = String.make 1 (Char.chr (value + 
+	let conv value = String.make 1 (Char.chr (value +
 			(if value < 10 then (Char.code '0') else (Char.code 'a' - 10)))) in
 	let rec build idx =
 		if idx >= lng then ""
@@ -153,7 +153,7 @@ let escape_string str =
 						^ (conv ((code mod 64) / 8))
 						^ (conv (code mod 8)) in
 			res ^ (build (idx + 1)) in
-	build 0	
+	build 0
 
 
 (** Print a line like '#line line "file"'
@@ -169,10 +169,10 @@ let rec has_extension attrs =
 	match attrs with
 	  [] -> false
 	| GNU_EXTENSION::_ -> true
-	| _::attrs -> has_extension attrs	
+	| _::attrs -> has_extension attrs
 
 
-(* 
+(*
 ** Base Type Printing
 *)
 let get_sign si =
@@ -191,7 +191,7 @@ let get_size siz =
 
 (** Print a base type, that is, the part before pointer, function or array declaration.
 	@param typ	Type to display.
-	@param var	Is it a variable display ? 
+	@param var	Is it a variable display ?
  *)
 let rec print_base_type typ var =
 	match typ with
@@ -215,7 +215,7 @@ let rec print_base_type typ var =
 	| VOLATILE typ -> print_base_type typ var
 	| GNU_TYPE (attrs, typ) ->  print_attributes attrs; print_base_type typ var
 	| TYPE_LINE (_, _, _type) -> print_base_type _type var
-	
+
 and print_fields id (flds : name_group list) =
 	print id;
 	if flds = []
@@ -253,7 +253,7 @@ and print_enum id items =
 
 
 (*
-** Declaration Printing 
+** Declaration Printing
 *)
 and get_base_type typ =
 	match typ with
@@ -264,11 +264,11 @@ and get_base_type typ =
 	| ARRAY (typ, _) -> get_base_type typ
 	| TYPE_LINE (_, _, typ) -> get_base_type typ
 	| _ -> typ
-	
+
 and print_pointer typ =
 	match typ with
 	  PTR typ -> print_pointer typ; print "*"
-	| RESTRICT_PTR typ -> 
+	| RESTRICT_PTR typ ->
 		print_pointer typ; print "* __restrict";
 		space ()
 	| CONST typ -> print_pointer typ; print " const "
@@ -402,7 +402,7 @@ and print_old_params pars ell =
 **		3	||
 **		2	? :
 **		1	= ?=
-**		0	,				
+**		0	,
 *)
 and get_operator exp =
 	match exp with
@@ -466,7 +466,7 @@ and get_operator exp =
 
 and print_comma_exps exps =
 	print_commas false (fun exp -> print_expression exp 1) exps
- 
+
 and print_expression (exp : expression) (lvl : int) =
 	let (txt, lvl') = get_operator exp in
 	let _ = if lvl > lvl' then print "(" else () in
@@ -556,6 +556,10 @@ and print_constant cst =
 			print_comma_exps exps;
 			print "}"
 		end
+	| RCONST_FLOAT f ->
+		print (string_of_float f)
+	| RCONST_INT i ->
+		print (string_of_int i)
 
 
 (*
@@ -658,7 +662,7 @@ and print_statement stat =
 		print ("asm(\"" ^ (escape_string desc) ^ "\");")
 	| GNU_ASM (desc, output, input, mods) ->
 		print ("asm(" ^ (escape_string desc) ^ "\"");
-		print " : ";		
+		print " : ";
 		print_commas false print_gnu_asm_arg output;
 		print " : ";
 		print_commas false print_gnu_asm_arg input;
@@ -684,13 +688,13 @@ and print_substatement stat =
 		  SEQUENCE _ | DOWHILE _ | IF _ -> true
 		| STAT_LINE (stat, _, _) -> is_sequence stat
 		| _ -> false in
-	
+
 	let rec is_block stat =
 		match stat with
 		  BLOCK _ -> true
 		| STAT_LINE (stat, _, _) -> is_block stat
 		| _ -> false in
-	
+
 	if is_sequence stat then
 		begin
 			new_line ();
@@ -764,12 +768,12 @@ and print_defs defs =
 
 and print_def def =
 	match def with
-	
+
 	FUNDEF (proto, body) ->
 		print_single_name proto false;
 		let (decs, stat) = body in print_statement (BLOCK (decs, stat));
 		force_new_line ();
-		
+
 	| OLDFUNDEF (proto, decs, body) ->
 		print_single_name proto false;
 		force_new_line ();
@@ -778,12 +782,12 @@ and print_def def =
 			decs;
 		let (decs, stat) = body in print_statement (BLOCK (decs, stat));
 		force_new_line ();
-		
+
 	| DECDEF names ->
 		print_name_group names;
 		print ";";
 		new_line ()
-			
+
 	| TYPEDEF (names, attrs) ->
 		if has_extension attrs then begin
 			print "__extension__";
@@ -800,7 +804,7 @@ and print_def def =
 		print ";";
 		new_line ();
 		force_new_line ()
-		
+
 
 (*  print abstrac_syntax -> ()
 **		Pretty printing the given abstract syntax program.

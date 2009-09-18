@@ -263,6 +263,11 @@ and constant =
 	| CONST_COMPOUND of expression list
 		(** Compound values between braces. Only valid for variable
 		initialization. *)
+	| RCONST_FLOAT of float
+		(** Constant with actual float value. *)
+	| RCONST_INT of int
+		(** Constant with actual integer value. *)
+
 
 (** GNU special attribute list.*)
 and gnu_attrs = gnu_attr list

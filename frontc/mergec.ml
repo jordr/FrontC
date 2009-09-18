@@ -1,5 +1,5 @@
 (** Merge many C files into a single one, with the right transformations.
-	
+
 	Checking a list of C files is done in four steps:
 		- step -1: geting informations about extern an global variables.
 		- step 0: removing redundants declarations  (typedefs, struct, union,
@@ -9,11 +9,11 @@
 				  conflicting typedef and static elements, and conflicting
 				  struct / enum / union.
 		- step 2: using them to rename conflicting elements.
-	
+
 	This module define also some utility functions.
-	
+
 	The main entry points of this module are the functions check and merge.
-	
+
 	@author Florian Birée <florian\@biree.name>
 	@version 0.2
 *)
@@ -22,12 +22,12 @@
 open Cabs
 
 (** Generic functions to manage a C Cabs file.
-	
+
 	Those functions works only on top-level definitions.
 *)
 
 (** Check a single C source file.
-	
+
 	Keep only definitions that respect the predicate in the tree,
 	then apply (corrector definition) on the definition.
 	@param predicate return if the definition is kept.
@@ -43,7 +43,7 @@ let rec file_checker = fun predicate corrector file ->
 		| [] -> []
 
 (** Check a list of c source files.
-	
+
 	Keep only definitions that respect the predicate in the trees,
 	then apply (corrector definition) on the trees, and return the
 	list of modified trees.
@@ -56,7 +56,7 @@ let rec file_list_checker = fun predicate corrector file_list ->
 	List.map (file_checker predicate corrector) file_list
 
 (** Transform definitions in a single C source file.
-	@param f function that takes the previous transformation result and the 
+	@param f function that takes the previous transformation result and the
 			current definition, and that must return the next transformation
 			result.
 	@param start the inital value passed as previous transformation result to f.
@@ -78,7 +78,7 @@ let file_list_transform = fun f start file_list ->
 	(List.fold_left (file_transform f) start file_list)
 
 (** Utility function to add a name in a name table.
-	
+
 	A name table is a list of (name, count).
 	@param name_table the initial name.
 	@param name the name to add in the table.
@@ -187,15 +187,15 @@ type elt =
 	| E_EXPR of expression
 
 (** Generic renaming function.
-	
+
 	For general purpose, see the rename function.
-	
+
 	@param element a C element to look for names to rename.
 	@param rn_name function that is applied on all names.
 	@return the resulting element.
 *)
 let rec generic_rename = fun element rn_name ->
-	
+
 	(* recursive calls to generic rename, with type convertion *)
 	let generic_rn_def = fun deflist ->
 		match generic_rename (E_DEF(deflist)) rn_name with
@@ -221,17 +221,19 @@ let rec generic_rename = fun element rn_name ->
 		match generic_rename (E_EXPR(expr)) rn_name with
 			E_EXPR(result) -> result
 			| _ -> failwith("Bad answer") in
-	
+
 	(* renaming in a constant *)
 	let rn_constant = fun constant ->
 		match constant with
-			CONST_INT(name) -> CONST_INT(rn_name name)
+			| CONST_INT(name) -> CONST_INT(rn_name name)
 			| CONST_FLOAT(name) -> CONST_FLOAT(rn_name name)
 			| CONST_CHAR(name) -> CONST_CHAR(rn_name name)
 			| CONST_STRING(name) -> CONST_STRING(rn_name name)
 			| CONST_COMPOUND(expr_list) ->
-				CONST_COMPOUND(List.map generic_rn_expr expr_list) in
-	
+				CONST_COMPOUND(List.map generic_rn_expr expr_list)
+			| RCONST_FLOAT f -> RCONST_FLOAT f
+			| RCONST_INT i -> RCONST_INT i in
+
 	(* renaming in an expression *)
 	let rec rn_expr = fun expr ->
 		match expr with
@@ -266,25 +268,25 @@ let rec generic_rename = fun element rn_name ->
 			| EXPR_LINE(exprl, str, num) ->
 				EXPR_LINE((rn_expr exprl), str, num)
 			| other -> other in
-	
+
 	(* renaming in a proto *)
 	let rn_proto = fun proto ->
 		let (base_type, single_name_list, other_param) = proto in
 		let new_sn_list = (List.map generic_rn_single_name single_name_list)
 		in ((generic_rn_basetype base_type), new_sn_list, other_param)
 		in
-	
+
 	(* renaming in an old K&R proto *)
 	let rn_old_proto = fun old_proto ->
 		let (base_type, str_list, other_param) = old_proto
 		in (generic_rn_basetype base_type, List.map rn_name str_list,
 			other_param) in
-	
+
 	(* renaming in an enum item *)
 	let rn_enum_item = fun enum_item ->
 		let (str, expr) = enum_item
 		in ((rn_name str), (rn_expr expr)) in
-	
+
 	(* renaming in gnu_attr *)
 	let rec rn_gnu_attr = fun gnu_attr ->
 		match gnu_attr with
@@ -295,11 +297,11 @@ let rec generic_rename = fun element rn_name ->
 					)
 			| GNU_ID(str) -> GNU_ID(rn_name str)
 			| other -> other in
-	
+
 	(* renaming in gnu_attrs *)
 	let rn_gnu_attrs = fun gnu_attrs ->
 		List.map rn_gnu_attr gnu_attrs in
-	
+
 	(* renaming in a base type *)
 	let rec rn_base_type = fun base_type ->
 		match base_type with
@@ -337,7 +339,7 @@ let rec generic_rename = fun element rn_name ->
 					(rn_base_type g_base_type)
 				)
 			| other -> other in
-	
+
 	(* renaming a cabs_name (type name in Cabs) *)
 	let rn_cabs_name = fun cabs_name ->
 		let (name, base_type, gnu_attrs, expr) = cabs_name
@@ -345,18 +347,18 @@ let rec generic_rename = fun element rn_name ->
 			(rn_base_type base_type),
 			(rn_gnu_attrs gnu_attrs),
 			(rn_expr expr)) in
-	
+
 	(* renaming in a single_name *)
 	let rn_single_name = fun single_name ->
 		let (base_type, storage, cabs_name) = single_name
 		in ((rn_base_type base_type), storage, (rn_cabs_name cabs_name)) in
-	
+
 	(* renaming in a name_group *)
 	let rn_name_group = fun name_group ->
 		let (base_type, storage, cabs_name_list) = name_group
 		in let res_name_list = List.map rn_cabs_name cabs_name_list
 		in ((rn_base_type base_type), storage, res_name_list) in
-	
+
 	(* renaming in statement *)
 	let rec rn_statement = fun statement ->
 		match statement with
@@ -392,12 +394,12 @@ let rec generic_rename = fun element rn_name ->
 			| STAT_LINE(stat, str, num) ->
 				STAT_LINE((rn_statement stat), str, num)
 			| other -> other in
-	
+
 	(* renaming in a body *)
 	let rec rn_body = fun body ->
 		let (def_list, statement) = body
 		in ((generic_rn_def def_list), (rn_statement statement)) in
-	
+
 	(* renaming in a definition list *)
 	let rec rn_def_list = fun def_list ->
 		match def_list with
@@ -422,7 +424,7 @@ let rec generic_rename = fun element rn_name ->
 			| ONLYTYPEDEF(name_group) :: t ->
 				ONLYTYPEDEF(rn_name_group name_group) :: (rn_def_list t)
 			| [] -> []
-	
+
 	(* dispatch generic elements -- generic_remane *)
 	in match element with
 		E_DEF(def_list) -> E_DEF(rn_def_list def_list)
@@ -436,9 +438,9 @@ let rec generic_rename = fun element rn_name ->
 (** Change all occurences of a name to another in a C source file.
 	This will replace names without checking the type of the elements
 	(the file will keep the same naming scheme).
-	
+
 	This function hopes that the new name doesn't currently exists.
-	
+
 	@return the resulting file.
 *)
 let rename = fun old_name new_name tree ->
@@ -464,7 +466,7 @@ let globals_tables = fun file_list ->
 		in match def with
 			| DECDEF(base_type, storage, cabs_names) ->
 				(* exclude function pointers *)
-				(let has_fun_ptr = (List.fold_left 
+				(let has_fun_ptr = (List.fold_left
 					(fun has cabs_name ->
 						(has ||
 						let (_, btype, _, _) = cabs_name
@@ -511,7 +513,7 @@ let conflicts_glob_extern_tables = function (globtbl, exttbl) ->
 	@return (onlytypedef definition, file_tail, list_tail)
 *)
 let check_onlytypedef = fun onlytypedef file_tail list_tail ->
-	(* return if the definition must be kept 
+	(* return if the definition must be kept
 		(the definition is removed if it has the same name_group than the first
 		onlytypedef)
 	*)
@@ -589,7 +591,7 @@ let global_table = ref []
 *)
 let check_decdef = fun decdef file_tail list_tail ->
 	let (base_type, storage, cabs_names) = decdef
-	
+
 	(* Do the check on one name *)
 	in let check_name = fun elements name ->
 		let (new_names, old_names, file_tail, list_tail) = elements
@@ -623,7 +625,7 @@ let check_decdef = fun decdef file_tail list_tail ->
 				file_checker predicate corrector file_tail,
 				file_list_checker predicate corrector list_tail
 			)
-			
+
 		(* -------- manage globals variable --------- *)
 		else if (is_name_in_table !global_table name)
 			(* remove declarations with only the global variable *)
@@ -653,7 +655,7 @@ let check_decdef = fun decdef file_tail list_tail ->
 			)
 		(* other declarations *)
 		else (new_names, old_names, file_tail, list_tail)
-	
+
 	(* Iterate checks on all names *)
 	in let (new_names, old_names, file_tail_chk, list_tail_chk) =
 		(name_fold_left
@@ -691,7 +693,7 @@ let check_step0 = fun file_list ->
 			| DECDEF(decdef) ->
 				(check_decdef decdef file_tail list_tail)
 			| other -> (other, file_tail, list_tail)
-	
+
 	(* apply checks on a file, return the file and the tail of the list of
 		files *)
 	in let rec check_file = fun cur_file list_tail ->
@@ -699,11 +701,11 @@ let check_step0 = fun file_list ->
 			| cur_def :: file_tail ->
 				let (cur_def_chk, file_tail_chk, list_tail_chk) =
 					(dispatch_checks cur_def file_tail list_tail)
-				in let (file_tail_rec, list_tail_rec) = 
+				in let (file_tail_rec, list_tail_rec) =
 					(check_file file_tail_chk list_tail_chk)
 				in (cur_def_chk :: file_tail_rec, list_tail_rec)
 			| [] -> ([], list_tail)
-	
+
 	(* apply checks on a list of files, return the checked list of files*)
 	in let rec check_file_list = fun cur_file_list ->
 		match cur_file_list with
@@ -796,7 +798,7 @@ let resolve_conflicts = fun prefix existing_table file_list conf_name ->
 (** Main functions: *)
 
 (** The check function get a list of C source files.
-	
+
 	It will check the list of C source trees in four steps:
 	    - search global or extern definitions to be simplified;
 		- remove redundants definitions;
@@ -805,9 +807,9 @@ let resolve_conflicts = fun prefix existing_table file_list conf_name ->
 	@param prefix the string to be added to the name of conflicting elements.
 	@param file_list the list of C source files.
 	@return the list of checked c source files.
-	
+
 	(Then see the merge function to concat them into one c source tree.)
-	
+
 	This is the main entry point of Mergec.
 *)
 let check = fun prefix file_list ->
@@ -823,7 +825,7 @@ let check = fun prefix file_list ->
 	in let static_fun_tbl = static_fun_table file_list0
 	in let only_tbl = onlytypedef_table file_list0
 	in let existing_names = typedef_tbl @ static_fun_tbl @ only_tbl
-	in let conf_names = ((keep_multiple typedef_tbl) @ 
+	in let conf_names = ((keep_multiple typedef_tbl) @
 						(keep_multiple static_fun_tbl) @
 						(keep_multiple only_tbl))
 	(* step 2: rename conflicting definitions *)
@@ -836,10 +838,10 @@ let check = fun prefix file_list ->
 	in file_list2
 
 (** The merge function merge a list of c source file into one c source file.
-	
+
 	It is recomended to give a list of c source files that have been checked
 	by the check function.
-	
+
 	@param file_list the list of C source file to merge.
 	@return the resulting C source file.
 *)
