@@ -1,4 +1,4 @@
-(* 
+(*
  *	$Id$
  *	Copyright (c) 2003, Hugues Cassé <hugues.casse@laposte.net>
  *
@@ -61,7 +61,7 @@ type symtab = Cabs.definition StringHashtbl.t
  * Parameters for building the reader handler.
  *)
 type parsing_arg =
-	  FROM_STDIN					(** Parse the standard input. *) 
+	  FROM_STDIN					(** Parse the standard input. *)
 	| FROM_CHANNEL of in_channel	(** Parse the given channel. *)
 	| FROM_FILE of string			(** Parse the given file. *)
 	| USE_CPP						(** Use the C preprocessor. *)
@@ -75,6 +75,7 @@ type parsing_arg =
 	| INTERACTIVE of bool			(** Is this session interactive (from console). *)
 	| GCC_SUPPORT of bool			(** Support some extensions of the GCC compiler (default to true). *)
 	| LINE_RECORD of bool			(** Record line numbers in the C abstract trees (default to false). *)
+	| STRICT_C of bool				(** C89 strict syntax *)
 
 
 (**
@@ -95,14 +96,14 @@ type parsing_result =
 let trans_old_fun_def (def: single_name * name_group list * body) =
 	let int_type = INT (NO_SIZE, NO_SIGN) in
 	let ((_type, store, name), par_types, body) = def in
-	let (ident, full_type, attrs, exp) = name in 
-	
+	let (ident, full_type, attrs, exp) = name in
+
 	let (rtype, par_names, vararg) =
 		match full_type with
 		  OLD_PROTO proto -> proto
 		| _ ->
 			raise UnconsistentDef in
-	
+
 	let process_group (rtype, store, names) =
 		List.map
 			(fun (name, _type, _, _) ->
@@ -110,7 +111,7 @@ let trans_old_fun_def (def: single_name * name_group list * body) =
 			names in
 
 	let par_defs = List.flatten (List.map process_group par_types) in
-	
+
 	let process_name name =
 		let (rtype, store, ftype) =
 			try
@@ -129,7 +130,7 @@ let trans_old_fun_def (def: single_name * name_group list * body) =
 		| RESTRICT_PTR _type -> RESTRICT_PTR (normalize_type _type)
 		| ARRAY(_type, size) -> ARRAY (normalize_type _type, size)
 		| _ -> _type in
-		
+
 	let fpars = List.map process_name par_names in
 	let proto = PROTO (normalize_type rtype, fpars, vararg) in
 	FUNDEF ((normalize_type _type, store, (ident, proto, attrs, exp)), body)
@@ -176,7 +177,8 @@ let parse args =
 	let interactive = ref false in
 	let gcc = ref true in
 	let linerec = ref false in
-	
+	let strict = ref false in
+
 	(* Scan the arguments *)
 	let rec scan args =
 		match args with
@@ -208,9 +210,11 @@ let parse args =
 		| (GCC_SUPPORT v) :: tl ->
 			gcc := v; scan tl
 		| (LINE_RECORD v) :: tl ->
-			linerec := v; scan tl in
+			linerec := v; scan tl
+		| (STRICT_C v) :: tl ->
+			strict := v; scan tl in
 	let _ = scan args in
-	
+
 	(* Build the input *)
 	let (real_input, close) =
 		if not !cpp_use then
@@ -219,10 +223,10 @@ let parse args =
 		else
 			let cmd = !cpp_cmd ^ " " ^ !cpp_opts ^ " " ^ !file in
 			(Unix.open_process_in cmd, true) in
-	
+
 	(* Perform the  parse *)
 	let result =
-		try 
+		try
 			Clexer.init {
 				Clexer.h_interactive = !interactive;
 				Clexer.h_in_channel = real_input;
@@ -234,6 +238,7 @@ let parse args =
 				Clexer.h_file_name = !file;
 				Clexer.h_gcc = !gcc;
 				Clexer.h_linerec = !linerec;
+				Clexer.h_strict = !strict;
 			};
 			PARSING_OK (Cparser.file
 				Clexer.initial
@@ -243,11 +248,15 @@ let parse args =
 		  	PARSING_ERROR
 		| Cabs.BadType ->
 			Clexer.display_semantic_error "mal-formed type" ;
-			PARSING_ERROR 
+			PARSING_ERROR
 		| Cabs.BadModifier ->
 			Clexer.display_semantic_error "mal-formed modifier";
+			PARSING_ERROR
+		| Cabs.BadSyntax ->
+			Clexer.display_semantic_error "syntax error";
 			PARSING_ERROR in
-	
+
+
 	(* Cleanup *)
 	if close then close_in real_input;
 	result
@@ -279,7 +288,7 @@ let parse_console _ : parsing_result =
  * @param input	Input channel to read the source from.
  * @param out	Output channel to display errors.
  * @return		Read C definitions.
- *)	
+ *)
 let parse_channel (input: in_channel) (out: out_channel) : parsing_result =
 	parse [FROM_CHANNEL input; ERROR out]
 
@@ -291,7 +300,7 @@ let parse_channel (input: in_channel) (out: out_channel) : parsing_result =
  * @return			Read C definitions.
  *
  * NOTE: an error during the read of the file returned as a parse failure.
- *)	
+ *)
 let parse_file (file_name : string) (out : out_channel) : parsing_result =
 	try
 		parse [FROM_FILE file_name; ERROR out]
@@ -313,7 +322,7 @@ let parse_and_link files args =
 		match parse ((FROM_FILE file)::args) with
 		  PARSING_ERROR -> raise (LoadError ("parsing error of " ^ file))
 		| PARSING_OK defs -> defs in
-	
+
 	let collect_globals tab def =
 		match def with
 		| Cabs.FUNDEF ((_, Cabs.EXTERN, _), _) -> ()
@@ -325,12 +334,12 @@ let parse_and_link files args =
 		| Cabs.DECDEF _ -> ()
 		| Cabs.TYPEDEF _ -> ()
 		| Cabs.ONLYTYPEDEF _ -> () in
-		
+
 	let files = List.map parse files in
 	let tab = StringHashtbl.create 251 in
 	List.iter (fun defs -> List.iter (collect_globals tab) defs) files
 
-		
+
 
 
 

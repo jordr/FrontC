@@ -22,6 +22,7 @@
 let version = "Cabs 2.2 04.19.05 Hugues Cassé"
 exception BadModifier
 exception BadType
+exception BadSyntax
 
 (** Thrown when an unconsistent C abstract syntax is found. *)
 exception UnconsistentDef

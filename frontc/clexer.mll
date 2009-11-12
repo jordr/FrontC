@@ -41,6 +41,7 @@ type handle = {
 	mutable h_file_name: string;
 	h_gcc: bool;
 	h_linerec: bool;
+	h_strict: bool
 }
 let current_handle = ref {
 		h_interactive = false;
@@ -53,6 +54,7 @@ let current_handle = ref {
 		h_file_name = "";
 		h_gcc = true;
 		h_linerec = false;
+		h_strict = false
 	}
 
 let interactive (h : handle) = h.h_interactive
