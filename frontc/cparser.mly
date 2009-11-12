@@ -1076,10 +1076,15 @@ gnu_asm_args:
 ;
 
 gnu_asm_arg:
-	CST_STRING LPAREN expression RPAREN
-		{ ("", $1, $3) }
-|	LBRACKET IDENT RBRACKET CST_STRING LPAREN expression RPAREN
-		{ ($2, $4, $6) }
+	CST_STRING gnu_asm_exp_opt
+		{ ("", $1, $2) }
+|	LBRACKET IDENT RBRACKET CST_STRING gnu_asm_exp_opt
+		{ ($2, $4, $5) }
+;
+
+gnu_asm_exp_opt:
+	/* empty */					{ NOTHING }
+|	LPAREN expression RPAREN	{ $2 }
 ;
 
 opt_gnu_asm_mods:
