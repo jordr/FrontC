@@ -1016,13 +1016,10 @@ opt_stats:
 |		stats							{$1}
 ;
 stats:
-    	statement						{$1}
-|   	stats locals statement			{
-			if $2 <> [] && (!Clexer.current_handle).Clexer.h_strict then
-				raise BadSyntax
-			else
-				SEQUENCE($1, BLOCK($2, $3))
-		}
+    	statement						{ $1 }
+|		statement locals				{ SEQUENCE($1, BLOCK($2, NOP)) }
+|   	statement stats 				{ SEQUENCE($1, $2) }
+|		statement locals stats			{ SEQUENCE($1, BLOCK($2, $3)) }
 ;
 statement:
 		SEMICOLON
