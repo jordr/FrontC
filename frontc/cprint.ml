@@ -670,7 +670,8 @@ and print_statement stat =
 			print " : ";
 			print_commas false print mods
 		end;
-		print ");"
+		print ");";
+		new_line ()
 	| STAT_LINE (stat, file, line) ->
 		print_line file line;
 		print_statement stat

@@ -1016,11 +1016,19 @@ opt_stats:
 |		stats							{$1}
 ;
 stats:
-    	statement						{ $1 }
-|		statement locals				{ SEQUENCE($1, BLOCK($2, NOP)) }
-|   	statement stats 				{ SEQUENCE($1, $2) }
-|		statement locals stats			{ SEQUENCE($1, BLOCK($2, $3)) }
+    	stat_with_local
+    		{ if (snd $1) = [] then (fst $1) else SEQUENCE(fst $1, BLOCK(snd $1, NOP)) }
+|		stat_with_local stats
+			{ if (snd $1) = [] then SEQUENCE (fst $1, $2) else SEQUENCE(fst $1, BLOCK(snd $1, $2)) }
 ;
+
+stat_with_local:
+		statement
+			{ ($1, []) }
+|		statement locals
+			{ if Clexer.is_strict () then raise BadSyntax else ($1, $2) }
+;
+
 statement:
 		SEMICOLON
 			{set_line $1 NOP}
@@ -1068,6 +1076,8 @@ statement:
 gnu_asm_io:
 	COLON gnu_asm_args
 		{ $2 }
+|	COLON /* empty */
+		{ [] }
 ;
 
 gnu_asm_args:

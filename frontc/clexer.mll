@@ -70,6 +70,7 @@ let linerec (h: handle) = h.h_linerec
 let curfile _ = (!current_handle).h_file_name
 let curline _ = (!current_handle).h_lineno
 let has_gcc _ = (!current_handle).h_gcc
+let is_strict _ = (!current_handle).h_strict
 
 
 (*
