@@ -221,7 +221,8 @@ let parse args =
 			if !file = "" then (!input, false)
 			else (open_in !file, true)
 		else
-			let cmd = !cpp_cmd ^ " " ^ !cpp_opts ^ " " ^ !file in
+			let cmd = !cpp_cmd ^ " " ^ !cpp_opts ^ " \"" ^ !file ^ "\"" in
+			Printf.printf "DEBUG: %s\n" cmd;
 			(Unix.open_process_in cmd, true) in
 
 	(* Perform the  parse *)
