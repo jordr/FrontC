@@ -25,6 +25,15 @@ open Cabs
 
 	Those functions works only on top-level definitions.
 *)
+	
+	(* is a declaration type a function declaration type  *)
+	let rec isProto typ =
+		 match typ with
+		 
+						  PROTO (_, _, _) | OLD_PROTO (_, _, _) ->	true
+						| GNU_TYPE (_, typ) ->isProto typ
+						| TYPE_LINE (_, _, _typ) -> isProto typ
+						| _ -> false  
 
 (** Check a single C source file.
 
@@ -90,6 +99,7 @@ let rec add_name = fun name_table name ->
 			then (name, count + 1) :: t
 			else (oth_name, count) :: (add_name t name)
 		| [] -> (name, 1) :: []
+
 
 (** Utility function to get the list of multiple names in a name table.
 	@param name_table the name table to get the names.
@@ -415,7 +425,7 @@ let rec generic_rename = fun element rn_name ->
 					(rn_body body)
 				) :: (rn_def_list t)
 			| DECDEF(name_group) :: t ->
-				DECDEF(rn_name_group name_group) :: (rn_def_list t)
+					DECDEF(rn_name_group name_group) :: (rn_def_list t)
 			| TYPEDEF(name_group,gnu_attrs) :: t ->
 				TYPEDEF(
 					(rn_name_group name_group),
@@ -479,11 +489,21 @@ let globals_tables = fun file_list ->
 				else let names = strings_of_cabsnames cabs_names
 				in match base_type with
 					| PROTO(_) | OLD_PROTO(_) -> (globtbl, exttbl)
-					| _ -> if storage = EXTERN
-						then (globtbl, (List.fold_left add_name exttbl names))
-						else if storage <> STATIC
-						then ((List.fold_left add_name globtbl names), exttbl)
-						else (globtbl, exttbl)
+					| _ -> 
+						
+	
+						 
+							(*if storage = EXTERN	then		List.iter (fun (name, pt , _,_)-> 
+ 								if isProto pt  then
+																	Printf.eprintf "\ndéclaration de fonction externe 1 %s \n" name
+												  )  cabs_names;*)
+
+							if storage = EXTERN
+							then (globtbl, (List.fold_left add_name exttbl  names))
+							else if storage <> STATIC
+							then ((List.fold_left add_name globtbl names), exttbl)
+							else (globtbl, exttbl)
+						 
 				)
 			| _ -> (globtbl, exttbl)
 	in file_list_transform counter ([], []) file_list
@@ -589,6 +609,10 @@ let global_table = ref []
 	@param list_tail the tail of the list of files
 	@return (decdef definition, file_tail, list_tail)
 *)
+
+
+	 
+
 let check_decdef = fun decdef file_tail list_tail ->
 	let (base_type, storage, cabs_names) = decdef
 
@@ -601,9 +625,11 @@ let check_decdef = fun decdef file_tail list_tail ->
 			then let def_name = ref cur_cabsname
 			(* remove other declarations of extern variables, and keep a ref
 				to the definition to be able to put it up *)
+
 			in let predicate = fun def ->
 				match def with
 					| DECDEF(base_type0, EXTERN, cabs_names0) ->
+					
 						not (name_is_lonely name cabs_names0)
 					| DECDEF(base_type0, storage0, cabs_names0) ->
 						let _ = def_name := (
@@ -836,6 +862,41 @@ let check = fun prefix file_list ->
 			conf_names
 		)
 	in file_list2
+
+(** The removeDuplicatedExtern function remove duplicated extern global declaration into file
+	@param file_list a list of parsed  C  files  
+	@return the resulting list of C files without duplicated extern.
+*)
+
+let extern_tableName = ref [] (* list of extern name declaration *)
+let rec removeDuplicatedExtern   file_list =
+match  file_list with 
+[] -> [] 
+| fp::sp ->removeExternIntoOneParsedFile fp :: (removeDuplicatedExtern  sp)
+	 
+
+
+
+and removeExternIntoOneParsedFile file =
+match  file with 
+[] -> [] 
+| def::sp ->
+	 
+		match def with
+			
+			 DECDEF(a, EXTERN, cabs_names) -> 
+	
+			   let newlist = List.filter ( fun (name, _ , _,_)->
+					if List.mem name !extern_tableName then 
+						false 
+					else (extern_tableName:=name::!extern_tableName;  true)
+					)cabs_names in
+				if newlist = [] then removeExternIntoOneParsedFile  sp else DECDEF(a, EXTERN, newlist) ::(removeExternIntoOneParsedFile  sp)
+			| _ -> def::(removeExternIntoOneParsedFile  sp)
+
+
+	
+	
 
 (** The merge function merge a list of c source file into one c source file.
 

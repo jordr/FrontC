@@ -437,31 +437,31 @@ and mutual_rec def infoFile =
 	@param x the tail of the definition list, initialy the whole file
 	@param file the whole file to search in
 *)	
-and test x file = 
+and test out x file  = 
 match x with 
-	[] -> output_string stdout ("")
+	[] -> output_string out ("")
 	| FUNDEF (sn,b)::r -> let d=(FUNDEF (sn,b)) in 
 			if (without_rec d file) 
 			then let name =nameFunction sn in 
 			begin 
-				output_string stdout name ;
+				output_string out name ;
 				let multiLevel = (match get_fun_body name file with 
 					FUNCBODY(b)-> 
-							if exist_call b [name] file then ( output_string stdout (" : mutual MultiLevelRec\n")  ; true) else (output_string stdout (" : without\n") ; false)
+							if exist_call b [name] file then ( output_string out (" : mutual MultiLevelRec\n")  ; true) else (output_string out (" : without\n") ; false)
 					|_ ->  
-				(output_string stdout (" : without\n"); false) ) in
-				if multiLevel = false then test r file 
+				(output_string out (" : without\n"); false) ) in
+				if multiLevel = false then test out r file 
 			end
 			else 
 				if (simple_rec (FUNDEF (sn,b)) file) 
-				then let name =nameFunction sn in begin output_string stdout name ; output_string stdout (" : simple\n") ; test r file end
+				then let name =nameFunction sn in begin output_string out name ; output_string out (" : simple\n") ; test out r file  end
 				else 
 					if (complex_rec (FUNDEF (sn,b)) file) 
-					then let name =nameFunction sn in begin output_string stdout name ; output_string stdout (" : complex\n") ; test r file end
+					then let name =nameFunction sn in begin output_string out name ; output_string out (" : complex\n") ; test out r file  end
 					else 
 						if (mutual_rec (FUNDEF (sn,b)) file) 
-						then let name =nameFunction sn in begin output_string stdout name ; output_string stdout (" : mutual\n") ; test r file end
+						then let name =nameFunction sn in begin output_string out name ; output_string out (" : mutual\n") ; test out r file  end
 						else failwith ("no group")
-	| _ ::r -> test r file
+	| _ ::r -> test out r file 
 
 
