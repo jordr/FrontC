@@ -59,7 +59,7 @@ let _ =
 		match Frontc.parse opts with
 		  PARSING_ERROR ->  ()
 		| PARSING_OK file ->
-			Sortrec.test file file  in
+			Sortrec.test stdout file file  in
 			
 	(* Process the inputs *)
 	let _ =

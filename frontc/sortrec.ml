@@ -124,34 +124,38 @@ and print_call l = match l with
 	[] -> output_string stdout ("   ")
 	|e::r -> begin output_string stdout e ; output_string stdout " " ;  print_call r end
 
-and exist_call_expr exp namefunList def=
+and exist_call_expr name exp namefunList def=
 match exp with
 	CALL (VARIABLE(m),a)-> 
-		if (List.mem m namefunList) then(output_string stdout (" : mutual MultiLevelRec because of \n")  ; output_string stdout m ;true)
+		if (List.mem name namefunList) then((*Printf.printf "111 exist_call_expr -> %s called from %s\n " name m; *)output_string stdout (" : mutual MultiLevelRec because of \n")  ; output_string stdout m ;true)
 		else
-		 
-			exist_call_expr (COMMA(a)) namefunList  def  ||
+		 	if (List.mem m namefunList) then false
+			else 
+			begin
+				(*Printf.printf "exist_call_expr -> %s  called from %s \n "  m name;*)
+					exist_call_expr name (COMMA(a)) namefunList  def  ||
 		
-		  ( match get_fun_body m def with 
-					FUNCBODY(b)-> 
-							if exist_call b (List.append [m]  namefunList) def then true else false
-					|_ ->  false
-				 ) 
+				  ( match get_fun_body m def with 
+							FUNCBODY(b)-> 
+									if exist_call name b (List.append [m]  namefunList) def then true else false
+							|_ ->  false
+						 ) 
+			end
 		
-	|UNARY (_,e) -> 		exist_call_expr e namefunList def
-	|BINARY (_,eg,ed)->   	exist_call_expr eg namefunList def ||  exist_call_expr ed namefunList  def 
-	|QUESTION (e,f,g) ->  	exist_call_expr e namefunList def ||  exist_call_expr f namefunList def ||  exist_call_expr g namefunList def
+	|UNARY (_,e) -> 		exist_call_expr name e namefunList def
+	|BINARY (_,eg,ed)->   	exist_call_expr name eg namefunList def ||  exist_call_expr name ed namefunList  def 
+	|QUESTION (e,f,g) ->  	exist_call_expr name e namefunList def ||  exist_call_expr name f namefunList def ||  exist_call_expr name g namefunList def
 		 
-	|CAST (_,e) -> 			exist_call_expr e namefunList def
-	|COMMA (e::[]) ->		exist_call_expr e namefunList def
+	|CAST (_,e) -> 			exist_call_expr name e namefunList def
+	|COMMA (e::[]) ->		exist_call_expr name e namefunList def
 	|COMMA (e::l) -> let suite= COMMA(l) in
-			 exist_call_expr suite namefunList def || exist_call_expr e namefunList def 
-	|EXPR_SIZEOF (e) -> 	exist_call_expr e namefunList def
-	|INDEX (e,f) ->   		if exist_call_expr e namefunList  def then true else exist_call_expr f namefunList  def
-	|MEMBEROF (e,_) -> 		exist_call_expr e namefunList def
-	|MEMBEROFPTR (e,_) -> 	exist_call_expr e namefunList def
-	|EXPR_LINE(e,_,_) -> 	exist_call_expr e namefunList def
-	|GNU_BODY(b) -> 		exist_call (snd b) namefunList def
+			 exist_call_expr name suite namefunList def || exist_call_expr name e namefunList def 
+	|EXPR_SIZEOF (e) -> 	exist_call_expr name e namefunList def
+	|INDEX (e,f) ->   		if exist_call_expr name e namefunList  def then true else exist_call_expr name f namefunList  def
+	|MEMBEROF (e,_) -> 		exist_call_expr name e namefunList def
+	|MEMBEROFPTR (e,_) -> 	exist_call_expr name e namefunList def
+	|EXPR_LINE(e,_,_) -> 	exist_call_expr name e namefunList def
+	|GNU_BODY(b) -> 		exist_call name (snd b) namefunList def
 	| _ -> false
 
 
@@ -161,21 +165,21 @@ match exp with
 	@param namefun		name of function
 	@return			boolean
 *)
-and exist_call stat namefun def =	
+and exist_call name stat namefun def =	
 match stat with
- 	COMPUTATION (e)-> 	exist_call_expr e namefun def
-	|BLOCK (_,s) -> 	exist_call s namefun def
-	|SEQUENCE (a,b) -> 	exist_call a namefun def ||exist_call b namefun def 
-	|IF (c,t,e) ->  	exist_call e namefun def || exist_call t namefun def ||  exist_call_expr c namefun def
-	|WHILE (e,s) -> 	exist_call_expr e namefun def || exist_call s namefun def 
-	|DOWHILE (e,s) -> 	exist_call_expr e namefun def ||  exist_call s namefun def
-	|FOR(a,b,c,s) -> 	exist_call_expr a namefun def || exist_call_expr b namefun def || exist_call_expr c namefun def || exist_call s namefun def
-	|RETURN (e) -> 		exist_call_expr e namefun def
-	|SWITCH (e,s) -> 	exist_call_expr e namefun def || exist_call s namefun def
-	|CASE (e,s) -> 		exist_call_expr e namefun def || exist_call s namefun def
-	|DEFAULT (s) -> 	exist_call s namefun def
-	|LABEL (_,s) -> 	exist_call s namefun def
-	|STAT_LINE (s,_,_) -> exist_call s namefun def
+ 	COMPUTATION (e)-> 	exist_call_expr name e namefun def
+	|BLOCK (_,s) -> 	exist_call name s namefun def
+	|SEQUENCE (a,b) -> 	exist_call name a namefun def ||exist_call name b namefun def 
+	|IF (c,t,e) ->  	exist_call name e namefun def || exist_call name t namefun def ||  exist_call_expr name c namefun def
+	|WHILE (e,s) -> 	exist_call_expr name e namefun def || exist_call name s namefun def 
+	|DOWHILE (e,s) -> 	exist_call_expr name e namefun def ||  exist_call name s namefun def
+	|FOR(a,b,c,s) -> 	exist_call_expr name a namefun def || exist_call_expr name b namefun def || exist_call_expr name c namefun def || exist_call name s namefun def
+	|RETURN (e) -> 		exist_call_expr name e namefun def
+	|SWITCH (e,s) -> 	exist_call_expr name e namefun def || exist_call name s namefun def
+	|CASE (e,s) -> 		exist_call_expr name e namefun def || exist_call name s namefun def
+	|DEFAULT (s) -> 	exist_call name s namefun def
+	|LABEL (_,s) -> 	exist_call name s namefun def
+	|STAT_LINE (s,_,_) -> exist_call name s namefun def
 	|(_) ->false
 
 
@@ -278,11 +282,11 @@ match lnamef, linfo with
 					else
 						if (nb==0)
 						then egal_different ln li eComplexe eSimple (eSans@[(n,i)])  different
-						else failwith ("egal_different info out")
+						else failwith ("frontc/sortrec : egal_different info out")
 				else egal_different ln li (eComplexe@[(n,i)]) eSimple eSans different
 				
 			else egal_different ln li eComplexe eSimple eSans (different@[(n,i)])
-	|_ -> failwith ("egal_different")
+	|_ -> failwith ("frontc/sortrec : egal_different")
 
 
 
@@ -300,7 +304,7 @@ and rec_mutuelle diff alldiff eComplexe eSimple eSans mutuelle =
 				else
 					if(nb==0)
 					then rec_mutuelle l alldiff eComplexe eSimple (eSans@[(namef,info)]) mutuelle
-					else failwith ("rec_mutuelle info out")
+					else failwith ("frontc/sortrec : rec_mutuelle info out")
 			else rec_mutuelle l alldiff (eComplexe@[(namef,info)]) eSimple eSans mutuelle
 		else rec_mutuelle l alldiff eComplexe eSimple eSans (mutuelle@[(namef,info)])
 
@@ -338,14 +342,14 @@ match li with
 	@return		boolean
 *)
 and without_rec def file =
-	let (complex, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
-	let (_, _, without, _) = rec_mutuelle different different complex simple without [] in
+	let (complexe, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
+	let (_, _, without, _) = rec_mutuelle different different complexe simple without [] in
 	match def with
 		| FUNDEF(sn,_) ->
 			let name = nameFunction sn in
 			search_in_list name without
 				(* Make the pattern exhaustive: *)
-		| _ -> failwith("Bad definition (a function is needed)")
+		| _ -> failwith("frontc/sortrec : Bad definition (a function is needed)")
 
 
 
@@ -355,14 +359,14 @@ and without_rec def file =
 	@return		boolean
 *)
 and simple_rec def file =
-	let (complex, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
-	let (_, simple, _, _) = rec_mutuelle different different complex simple without [] in
+	let (complexe, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
+	let (_, simple, _, _) = rec_mutuelle different different complexe simple without [] in
 	match def with
 		| FUNDEF(sn,_) ->
 			let name = nameFunction sn in
 			search_in_list name simple	
 				(* Make the pattern exhaustive: *)
-		| _ -> failwith("Bad definition (a function is needed)")
+		| _ -> failwith("frontc/sortrec : Bad definition (a function is needed)")
 
 
 
@@ -372,14 +376,14 @@ and simple_rec def file =
 	@return		boolean
 *)
 and complex_rec def file =
-	let (complex, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
-	let (complex, _, _, _) = rec_mutuelle different different complex simple without [] in
+	let (complexe, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
+	let (complexe, _, _, _) = rec_mutuelle different different complexe simple without [] in
 	match def with
 		| FUNDEF(sn,_) ->
 			let name = nameFunction sn in
-			search_in_list name complex	
+			search_in_list name complexe	
 				(* Make the pattern exhaustive: *)
-		| _ -> failwith("Bad definition (a function is needed)")
+		| _ -> failwith("frontc/sortrec : Bad definition (a function is needed)")
 		
 
 		
@@ -389,13 +393,13 @@ and complex_rec def file =
 	@return		boolean
 *)
 and mutual_rec def file =
-	let (complex, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
-	let (_, _, _, mutual) = rec_mutuelle different different complex simple without [] in
+	let (complexe, simple, without, different) = egal_different (name_fun_list file) (readFich file) [] [] [] [] in 
+	let (_, _, _, mutual) = rec_mutuelle different different complexe simple without [] in
 	match def with
 		| FUNDEF(sn,_) ->
 			let name = nameFunction sn in
 			search_in_list name mutual	
-		| _ -> failwith("Bad definition (a function is needed)")
+		| _ -> failwith("frontc/sortrec : Bad definition (a function is needed)")
 
 
 
@@ -442,12 +446,12 @@ match x with
 	[] -> output_string out ("")
 	| FUNDEF (sn,b)::r -> let d=(FUNDEF (sn,b)) in 
 			if (without_rec d file) 
-			then let name =nameFunction sn in 
-			begin 
+			then  
+			begin let name =nameFunction sn in  Printf.printf "\ntest -> %s \n " name ;
 				output_string out name ;
 				let multiLevel = (match get_fun_body name file with 
-					FUNCBODY(b)-> 
-							if exist_call b [name] file then ( output_string out (" : mutual MultiLevelRec\n")  ; true) else (output_string out (" : without\n") ; false)
+					FUNCBODY(b)-> (*Cprint.print_statement b ;*)
+							if  exist_call name b [] file then ( output_string out (" : mutual MultiLevelRec\n")  ; true) else (output_string out (" : without\n") ; false)
 					|_ ->  
 				(output_string out (" : without\n"); false) ) in
 				if multiLevel = false then test out r file 
@@ -461,7 +465,84 @@ match x with
 					else 
 						if (mutual_rec (FUNDEF (sn,b)) file) 
 						then let name =nameFunction sn in begin output_string out name ; output_string out (" : mutual\n") ; test out r file  end
-						else failwith ("no group")
+						else failwith ("frontc/sortrec : no group")
 	| _ ::r -> test out r file 
+
+
+
+(** Search if it exists recursive function in a C source file.
+	@param x the tail of the definition list, initialy the whole file
+	@param file the whole file to search in
+*)	
+and hasRecursivity  x file  = 
+match x with 
+	[] -> false
+	| FUNDEF (sn,b)::r -> let d=(FUNDEF (sn,b)) in 
+			if (without_rec d file) 
+			then 
+			begin let name =nameFunction sn in 
+				(*output_string out name ;*)
+				let multiLevel = (match get_fun_body name file with 
+					FUNCBODY(b)-> 
+							if exist_call name b [] file then  true else false
+					|_ ->   false ) in
+				if multiLevel = false then hasRecursivity  r file else false 
+			end
+			else 
+				if (simple_rec (FUNDEF (sn,b)) file) 
+				then true
+				else 
+					if (complex_rec (FUNDEF (sn,b)) file) 
+					then  true
+					else 
+						if (mutual_rec (FUNDEF (sn,b)) file) 
+						then  true
+						else failwith ("frontc/sortrec : no group")
+	| _ ::r -> hasRecursivity r file 
+
+(** Search if it exists recursive function but only single one in a C source file.
+	@param x the tail of the definition list, initialy the whole file
+	@param file the whole file to search in
+*)	
+and hasOnlySIngleRecursivity  x file  = 
+match x with 
+	[] -> true
+	| FUNDEF (sn,b)::r -> let d=(FUNDEF (sn,b)) in 
+			if (without_rec d file) 
+			then let name =nameFunction sn in 
+			begin 
+				(*output_string out name ;*)
+				let nomultiLevel = (match get_fun_body name file with 
+					FUNCBODY(b)-> 
+							if exist_call name b [] file then  false else true
+					|_ ->   true ) in
+				if nomultiLevel = true then hasOnlySIngleRecursivity  r file else false 
+			end
+			else 
+				if (simple_rec (FUNDEF (sn,b)) file) 
+				then  hasOnlySIngleRecursivity r file  
+				else 
+					if (complex_rec (FUNDEF (sn,b)) file) 
+					then  false
+					else 
+						if (mutual_rec (FUNDEF (sn,b)) file) 
+						then false
+						else failwith ("frontc/sortrec : no group")
+	| _ ::r -> hasOnlySIngleRecursivity r file 
+
+(** Classified the recursivity type of the apploication
+	Recurcivity application class : (0: no recursivity, 1: only single recursivity (that may be change into loop by calypso using --crec option), 2:others cases
+	@param x the tail of the definition list, initialy the whole file
+	@param file the whole file to search in
+*)	
+
+let applicationRecursivityClass x file =
+	if hasRecursivity  x file = false then 0
+	else	if hasOnlySIngleRecursivity  x file  then 1
+		else 2
+
+
+
+
 
 
