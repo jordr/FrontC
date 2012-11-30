@@ -247,9 +247,9 @@ let parse args =
 		with
 		  Parsing.Parse_error ->
 		  	PARSING_ERROR
-		| Cabs.BadType ->
+		(*| Cabs.BadType ->
 			Clexer.display_semantic_error "mal-formed type" ;
-			PARSING_ERROR
+			PARSING_ERROR*)
 		| Cabs.BadModifier ->
 			Clexer.display_semantic_error "mal-formed modifier";
 			PARSING_ERROR

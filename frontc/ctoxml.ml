@@ -253,9 +253,7 @@ and convert_type _type =
 	| INT (LONG_LONG, NO_SIGN)
 	| INT (LONG_LONG, SIGNED) -> base_type "llong"
 	| INT (LONG_LONG, UNSIGNED) -> base_type "ulong"
-	| BITFIELD (NO_SIGN, exp) -> Cxml.new_elt "bits" [] [convert_exp exp]
-	| BITFIELD (SIGNED, exp) -> Cxml.new_elt "bits" [] [convert_exp exp]
-	| BITFIELD (UNSIGNED, exp) -> Cxml.new_elt "ubits" [] [convert_exp exp]
+	| BITFIELD (t, exp) -> Cxml.new_elt "bits" [] [convert_type t; convert_exp exp]
 	| FLOAT false -> base_type "float"
 	| FLOAT true
 	| DOUBLE false -> base_type "double"

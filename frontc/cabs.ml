@@ -1,32 +1,28 @@
-(* cabs -- abstract syntax for FrontC
-**
-** Project:	frontc
-** File:	cabs.ml
-** Version:	2.2
-** Date:	04.19.05
-** Author:	Hugues Cassé
-**
-**	1.0		2.19.99		Hugues Cassé
-**	First version.
-**	2.0		3.22.99		Hugues Cassé
-**	Generalization of typed names.
-**	2.1		4.7.99		Hugues Cassé
-**	GNU Statement embedded in expressions managed.
-**  2.2		04.19.05	Hugues Cassé
-**	Improved support of GCC attributes.
-**  Support of restricted pointers.
+(*
+	FrontC -- representation of C sources.
+	Copyright (C) 2012 IRIT - université de Toulouse
+
+	This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Lesser General Public
+	License as published by the Free Software Foundation; either
+	version 2.1 of the License, or (at your option) any later version.
+
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public
+	License along with this library; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 *)
 
-(** This module provides an OCAML representation of C sources. *)
-
-let version = "Cabs 2.2 04.19.05 Hugues Cassé"
 exception BadModifier
 exception BadType
 exception BadSyntax
 
 (** Thrown when an unconsistent C abstract syntax is found. *)
 exception UnconsistentDef
-
 
 
 (** Size of int *)
@@ -57,7 +53,7 @@ and base_type =
 	| VOID					(** "void" type *)
 	| CHAR of sign			(** "char" type with sign modifier *)
 	| INT of size * sign	(** "int" type with size and sign modifiers *)
-	| BITFIELD of sign * expression
+	| BITFIELD of base_type * expression
 		(** Bitfield with sign modifier and size expression *)
 	| FLOAT of bool				(** "float" type with long (true) modifier *)
 	| DOUBLE of bool			(** "doubl" type with long (true) modifier *)

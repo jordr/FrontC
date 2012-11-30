@@ -3,7 +3,7 @@
 _all: _subdirs_all $(_ALL)
 
 _subdirs_all:
-	@for d in $(SUBDIRS); do cd $$d; $(MAKE) all; cd ..; done
+	@for d in $(SUBDIRS); do cd $$d; $(MAKE) all || exit 1; cd ..; done
 
 clean: _clean _subdirs_clean
 

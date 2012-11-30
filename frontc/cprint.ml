@@ -199,7 +199,7 @@ let rec print_base_type typ var =
 	| VOID -> print "void"
 	| CHAR sign -> print ((get_sign sign) ^ "char")
 	| INT (size, sign) -> print ((get_sign sign) ^ (get_size size) ^ "int")
-	| BITFIELD (sign, _) -> print ((get_sign sign) ^ "int")
+	| BITFIELD (t, n) -> print_base_type t var; print ": "; print_expression n 0
 	| FLOAT size -> print ((if size then "long " else "") ^ "float")
 	| DOUBLE size -> print ((if size then "long " else "") ^ "double")
 	| NAMED_TYPE id -> print id

@@ -42,27 +42,31 @@ let fatal _ =
 	Clexer.display_error "fatal error" (Parsing.symbol_start ()) (Parsing.symbol_end ())
 
 
-(*
-** Type analysis
-*)
+(** Modifiers. *)
 type modifier =
-	BASE_SIZE of size
-	| BASE_SIGN of sign
-	| BASE_STORAGE of storage
-	| BASE_VOLATILE
-	| BASE_CONST
-	| BASE_GNU_ATTR of Cabs.gnu_attrs
+	| BASE_SIZE of size					(** size modifier *)
+	| BASE_SIGN of sign					(** sign modifier *)
+	| BASE_STORAGE of storage			(** storage modifier *)
+	| BASE_VOLATILE						(** "volatile" modifier. *)
+	| BASE_CONST						(** "const" modifier. *)
+	| BASE_GNU_ATTR of Cabs.gnu_attrs	(** GNU attribute. *)
 
+
+(** Apply a modifier on a type.
+	@param typ	Type to apply modifier to.
+	@param sto	Storage to apply modifier to.
+	@param modi	Modifier to apply.
+	@return		(type, storage) after the modifier application. *)
 let apply_mod (typ, sto) modi =
 	let rec mod_root typ =
 		match (typ, modi) with
-		(NO_TYPE, BASE_SIGN sign) -> INT (NO_SIZE, sign)
+		| (NO_TYPE, BASE_SIGN sign) -> INT (NO_SIZE, sign)
 		| (NO_TYPE, BASE_SIZE size) -> INT (size, NO_SIGN)
 		| (CHAR NO_SIGN, BASE_SIGN sign) -> CHAR sign
 		| (INT (NO_SIZE, sign), BASE_SIZE size) -> INT (size, sign)
 		| (INT (LONG, sign), BASE_SIZE LONG) -> INT (LONG_LONG, sign)
 		| (INT (size, NO_SIGN), BASE_SIGN sign) -> INT (size, sign)
-		| (BITFIELD (NO_SIGN, exp), BASE_SIGN sign) -> BITFIELD (sign, exp)
+		| (BITFIELD (t, exp), BASE_SIGN sign) -> BITFIELD (t, exp)
 		| (FLOAT false, BASE_SIZE LONG) -> FLOAT true
 		| (DOUBLE false, BASE_SIZE LONG) -> DOUBLE true
 		| (PTR typ, _) -> PTR (mod_root typ)
@@ -91,13 +95,25 @@ let apply_mod (typ, sto) modi =
 	| BASE_GNU_ATTR attrs ->
 		(GNU_TYPE (attrs, typ), sto)
 
+
+(** Apply a list of modifier to a type.
+	@param mods		Modifiers to apply.
+	@param fty		(type, storage) to modify.
+	@return			(type, storage) result. *)
 let apply_mods mods fty =
 	List.fold_left apply_mod fty mods
 
+
+(** Complete the basic part of a composed type. Usually basic type (scalar, named type,
+	struct, etc) are built separately from composed type (pointer, array, etc)
+	with an empty basic type that must be replaced by an actual basic type.
+	@param tst		Basic type to set.
+	@param tin		Composed type to set the basic type in.
+	@return			Composed type with basic type replaced. *)
 let set_type tst tin =
 	let rec set typ =
 		match typ with
-		NO_TYPE -> tst
+		| NO_TYPE -> tst
 		| PTR typ -> PTR (set typ)
 		| RESTRICT_PTR typ -> RESTRICT_PTR (set typ)
 		| ARRAY (typ, dim) -> ARRAY (set typ, dim)
@@ -106,20 +122,18 @@ let set_type tst tin =
 		| CONST typ -> CONST (set typ)
 		| VOLATILE typ -> VOLATILE (set typ)
 		| TYPE_LINE (f, l, t) -> TYPE_LINE (f, l, set t)
-		| BITFIELD (NO_SIGN, exp) ->
-			(match tst with
-				INT (_, sign) -> BITFIELD (sign, exp)
-				| _ -> raise BadType)
+		| BITFIELD (_, exp) -> BITFIELD (tst, exp)
 		| _ -> raise BadType in
 	set tin
 
 
-(*
-** Expression building
+(** Smooth a list of expressions as a comma list (if required).
+	@param lst	List of expressions.
+	@return		Smoothed list.
 *)
 let smooth_expression lst =
 	match lst with
-		[] -> NOTHING
+		| [] -> NOTHING
 		| [expr] -> expr
 		| _ -> COMMA (List.rev lst)
 let list_expression expr =
@@ -129,19 +143,51 @@ let list_expression expr =
 		| _ -> [expr]
 
 
-(*** Named Building ***)
+(** Set the base type of a name tuple.
+	@param typ		Base type to set.
+	@param id		Identifier.
+	@param typ'		Name type.
+	@param attr		Attributes of the name.
+	@param exp		Initial expression of the type.
+	@return			Name with the basic type replaced. *)
 let set_name (typ : base_type) (id, typ', attr, exp) =
 	(id, set_type typ typ', attr, exp)
 
+
+(** Set the (type, storage) to a name group.
+	@param typ	Type to set.
+	@param sto	Storage to set.
+	@param lst	List of names.
+	@return		Name list with type and storage replaced. *)
 let set_name_group (typ, sto) (lst : name list)
 : name_group =
 	(typ, sto, List.map (set_name typ) lst)
 
+
+(** Set the type and storage on a single name group.
+	@param typ	Type to set.
+	@param sto	Storage to set.
+	@param name	Name to modify.
+	@return		Modified name. *)
 let set_single (typ, sto) name : single_name =
 	(typ, sto, set_name typ name)
 
+
+(** Set the initialization expression on a name group.
+	@param id	Name identifier.
+	@param typ	Name type.
+	@param attr	Name attributes.
+	@param ini	Initialization expression to set.
+	@return		Name with the initialization expression replaced. *)
 let set_data (id, typ, attr, _) ini = (id, typ, attr, ini)
 
+
+(** Combines the modifier of two types. One of t1 or t2 must be NO_TYPE.
+	@param t1	First type.
+	@param q1	First modifiers.
+	@param t2	Second type.
+	@param q2	Second modifiers.
+	@return		Combined (type, modifiers). *)
 let apply_qual ((t1, q1) : base_type * modifier list)
 			   ((t2, q2) : base_type * modifier list)
 			   : base_type * modifier list =
@@ -149,17 +195,30 @@ let apply_qual ((t1, q1) : base_type * modifier list)
 		if t2 = NO_TYPE then t1 else  raise BadModifier),
 	List.append q1 q2)
 
-(*** Line management ***)
+(** Build an embedded line/source reference.
+	@param file		Source file.
+	@param line		Source line.
+	@param stat		Statement matching the source file/line pair. *)
 let set_line (file, line) stat =
 	if Clexer.linerec !Clexer.current_handle
 	then Cabs.STAT_LINE (stat, file, line)
 	else stat
 
+
+(** Build an embedded line/source reference.
+	@param file		Source file.
+	@param line		Source line.
+	@param expr		Expression matching the source file/line pair. *)
 let set_eline (file, line) expr =
 	if Clexer.linerec !Clexer.current_handle
 	then Cabs.EXPR_LINE (expr, file, line)
 	else expr
 
+
+(** Build an embedded line/source reference.
+	@param file		Source file.
+	@param line		Source line.
+	@param _type	Type matching the source file/line pair. *)
 let set_tline _type =
 	if Clexer.linerec !Clexer.current_handle
 	then Cabs.TYPE_LINE (Clexer.curfile (), Clexer.curline(), _type)
@@ -664,9 +723,9 @@ field_dec:
 |		LPAREN field_dec RPAREN
 			{$2}
 |		IDENT COLON expression
-			{($1, BITFIELD (NO_SIGN, $3))}
+			{($1, BITFIELD (NO_TYPE, $3))}
 |		COLON expression
-			{("", BITFIELD (NO_SIGN, $2))}
+			{("", BITFIELD (NO_TYPE, $2))}
 ;
 
 
