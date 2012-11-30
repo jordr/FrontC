@@ -60,7 +60,7 @@ let _ =
 	(* Process the input *)
 	let process opts =
 		match Frontc.parse opts with
-		  PARSING_ERROR ->  ()
+		  PARSING_ERROR ->  exit 1
 		| PARSING_OK file ->
 			Cprint.print output file in
 

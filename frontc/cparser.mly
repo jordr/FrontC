@@ -665,6 +665,8 @@ field_dec:
 			{$2}
 |		IDENT COLON expression
 			{($1, BITFIELD (NO_SIGN, $3))}
+|		COLON expression
+			{("", BITFIELD (NO_SIGN, $2))}
 ;
 
 
