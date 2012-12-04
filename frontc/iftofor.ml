@@ -4,6 +4,7 @@
 
 open Frontc
 open Cabs
+open Cprint
 
 (** compare 2 String
 	@param n	one string.
@@ -40,22 +41,22 @@ let call_me = fun n m ->
 	@param exp	expression
 	@return		boolean
  *)
-let rec e_call n exp =
+let rec e_call n exp =  
 match exp with
-	CALL (VARIABLE(m),_)-> call_me n m
-	|UNARY (_,e) -> e_call n e
-	|BINARY (_,eg,ed)-> (e_call n eg) || (e_call n ed)
-	|QUESTION (e,f,g) -> (e_call n e) || (e_call n f) || (e_call n g)
-	|CAST (_,e) -> (e_call n e)
-	|COMMA (e::[]) -> (e_call n e)
-	|COMMA (e::l) -> let exp=COMMA(l) in (e_call n e) || (e_call n exp)
-	|EXPR_SIZEOF (e) -> (e_call n e)
-	|INDEX (e,f) -> (e_call n e) || (e_call n f)
-	|MEMBEROF (e,_) -> (e_call n e)
-	|MEMBEROFPTR (e,_) -> (e_call n e)
-	|EXPR_LINE(e,_,_) -> (e_call n e)
-	|GNU_BODY(b) -> search_call n (snd b)
-	| _ ->false
+	CALL (VARIABLE(m),_)-> (*Printf.printf "e_call CALL\n" ;*)call_me n m
+	|UNARY (_,e) -> (*Printf.printf "e_call UNARY\n" ;*)e_call n e
+	|BINARY (_,eg,ed)-> (*Printf.printf "e_call BINARY\n" ;*)(e_call n eg) || (e_call n ed)
+	|QUESTION (e,f,g) -> (*Printf.printf "e_call QUESTION\n" ;*)(e_call n e) || (e_call n f) || (e_call n g)
+	|CAST (_,e) -> (*Printf.printf "e_call CAST\n" ;*)(e_call n e)
+	|COMMA (e::[]) -> (*Printf.printf "e_call COMMA\n" ;*)(e_call n e)
+	|COMMA (e::l) -> (*Printf.printf "e_call COMMA\n" ;*)let exp=COMMA(l) in (e_call n e) || (e_call n exp)
+	|EXPR_SIZEOF (e) -> (*Printf.printf "e_call EXPR_SIZEOF\n" ;*)(e_call n e)
+	|INDEX (e,f) -> (*Printf.printf "e_call INDEX\n" ;*)(e_call n e) || (e_call n f)
+	|MEMBEROF (e,_) -> (*Printf.printf "e_call MEMBEROF\n" ;*)(e_call n e)
+	|MEMBEROFPTR (e,_) -> (*Printf.printf "e_call MEMBEROFPTR\n" ;*)(e_call n e)
+	|EXPR_LINE(e,_,_) -> (*Printf.printf "e_call EXPR_LINE\n" ;*)(e_call n e)
+	|GNU_BODY(b) -> (*Printf.printf "e_call GNU\n" ;*)search_call n (snd b)
+	| _ -> (*Printf.printf "e_call OTHER\n" ;*)false
 
 
 (** search in statement if function is called
@@ -63,22 +64,22 @@ match exp with
 	@param exp	statement
 	@return		boolean
  *)
-and search_call = fun n c ->
-match c with
-	 COMPUTATION (e)-> e_call n e
-	|BLOCK (_,c) -> (search_call n c)
-	|SEQUENCE (a,b) -> (search_call n a) || (search_call n b)
-	|IF (c,t,e) -> (e_call n c) || (search_call n t) || (search_call n e)
-	|WHILE (e,s) -> (e_call n e) || (search_call n s)
-	|DOWHILE (e,s) -> (e_call n e) || (search_call n s)
-	|FOR(a,b,c,s) -> (e_call n a) || (e_call n b) || (e_call n c) || (search_call n s)
-	|RETURN (e) -> (e_call n e)
-	|SWITCH (e,s) -> (e_call n e) || (search_call n s)
-	|CASE (e,s) -> (e_call n e) || (search_call n s)
-	|DEFAULT (s) -> (search_call n s)
-	|LABEL (_,s) -> (search_call n s)
-	|STAT_LINE (s,_,_) -> (search_call n s)
-	|(_) -> false
+and search_call =  fun n c ->
+match c with  
+	 COMPUTATION (e)-> (*Printf.printf "search_call COMPUTATION\n" ;*)e_call n e
+	|BLOCK (_,c) -> (*Printf.printf "search_call BLOCK\n" ;*)(search_call n c)
+	|SEQUENCE (a,b) -> (*Printf.printf "search_call SEQUENCE\n" ;*)(search_call n a) || (search_call n b)
+	|IF (c,t,e) -> (*Printf.printf "search_call IF\n" ;*)(e_call n c) || (search_call n t) || (search_call n e)
+	|WHILE (e,s) -> (*Printf.printf "search_call WHILE\n" ;*)(e_call n e) || (search_call n s)
+	|DOWHILE (e,s) -> (*Printf.printf "search_call DOWHILE\n" ;*)(e_call n e) || (search_call n s)
+	|FOR(a,b,c,s) -> (*Printf.printf "search_call FOR\n" ;*)(e_call n a) || (e_call n b) || (e_call n c) || (search_call n s)
+	|RETURN (e) -> (*Printf.printf "search_call RETURN\n" ;*)(e_call n e)
+	|SWITCH (e,s) -> (*Printf.printf "search_call SWITCH\n" ;*)(e_call n e) || (search_call n s)
+	|CASE (e,s) -> (*Printf.printf "search_call CASE\n" ;*)(e_call n e) || (search_call n s)
+	|DEFAULT (s) -> (*Printf.printf "search_call DEFAULT\n" ;*)(search_call n s)
+	|LABEL (_,s) -> (*Printf.printf "search_call LABEL\n" ;*)(search_call n s)
+	|STAT_LINE (s,_,_) -> (*Printf.printf "search_call STAT_LINE\n" ;*)(search_call n s)
+	|(_) ->  (*Printf.printf "search_call OTHER\n" ;*)false
 
 
 
@@ -87,7 +88,7 @@ match c with
 	@param exp	statement
 	@return		boolean
  *)
-and search_rec_ok = fun n c ->
+and search_rec_ok =  fun n c ->
 match c with
 	BLOCK (_,c) -> (search_rec_ok n c)
 	|SEQUENCE (a,b) -> (search_rec_ok n a) || (search_rec_ok n b)
@@ -100,7 +101,7 @@ match c with
 	|DEFAULT (s) -> (search_rec_ok n s)
 	|LABEL (_,s) -> (search_rec_ok n s)
 	|STAT_LINE (s,_,_) -> (search_rec_ok n s)
-	|(_) -> false
+	|(_) -> (*Printf.printf "search_rec_ok OTHER\n" ;*)false
 
 
 
@@ -113,7 +114,7 @@ match c with
 and search_arg li numpara cpt=
 	match li with
 	e::l ->	if (cpt == numpara) then e else search_arg l numpara (cpt+1)
-	|[] -> failwith ("search_arg")
+	|[] -> failwith ("frontc/iftofor.ml : search_arg")
 
 
 (** search parameter at npara position in expression
@@ -140,7 +141,7 @@ match exp with
 	| MEMBEROFPTR (e,_) -> location_arg_in_expr e name npara
 	| GNU_BODY (b) -> location_arg (snd b) name npara
 	| EXPR_LINE (e,_,_) -> location_arg_in_expr e name npara
-	|_ -> NOTHING
+	|_ -> (*Printf.printf "1 OTHER\n" ;*)NOTHING
 
 
 
@@ -165,7 +166,7 @@ and location_arg stat name npara=
 	| DEFAULT (s) -> location_arg s name npara
 	| LABEL (_,s) -> location_arg s name npara
 	| STAT_LINE (s,_,_) -> location_arg s name npara
-	|_ -> NOTHING
+	|_ -> (*Printf.printf "2 OTHER\n" ;*)NOTHING
 
 
 
@@ -180,7 +181,7 @@ and revers_sign_binary bop = match bop with
 	|GT -> LE
 	|LE -> GT
 	|GE -> LT
-	| _ -> failwith("argument revers_sign_binary out")
+	| _ -> failwith("frontc/iftofor.ml : argument revers_sign_binary out")
 
 
 
@@ -202,7 +203,7 @@ match stat with
 	| DEFAULT (st) -> lastIF st n
 	| LABEL (_,st) -> lastIF st n
 	| STAT_LINE (st,_,_) -> lastIF st n
-	| _ -> true
+	| _ ->(*Cprint.print_statement stat ; Printf.printf "lastIF OTHER\n" ;*)true
 
 
 
@@ -227,7 +228,7 @@ match expr with
 	| MEMBEROF (e,_) -> expr_contains_parameter e nameParameter
 	| MEMBEROFPTR (e,_) -> expr_contains_parameter e nameParameter
 	| EXPR_LINE (e,_,_) -> expr_contains_parameter e nameParameter
-	| _ -> false
+	| _ -> (*Printf.printf "expr_cont OTHER\n" ;*)false
 
 
 
@@ -253,31 +254,38 @@ match u with
 	@return			boolean
 *)
 and beforeNowAfter stat nameFunction before casRec after =
+(*Printf.printf "beforeNowAfter -> %s" nameFunction ;Cprint.print_statement stat ;*)
 match stat with
 	BLOCK (b) -> if (casRec == []) 
 			then 
+			(	(*Printf.printf "beforeNowAfter Bloc-> %s" nameFunction ;*)
 				if  (search_call nameFunction (snd b))
 				then beforeNowAfter (snd b) nameFunction before (casRec@[BLOCK (b)]) after
 				else (before@ [BLOCK (b)],casRec,after)
-			else 
-				(before,casRec,(after@ [BLOCK (b)]))
+			)
+			else  (before,casRec,(after@ [BLOCK (b)])) 
 	| SEQUENCE (s1,s2) -> if(search_call nameFunction s1) 
 				then (beforeNowAfter s1 nameFunction before casRec (after@[SEQUENCE (NOP,s2)]))
 				else (beforeNowAfter s2 nameFunction (before@[SEQUENCE (s1,NOP)]) casRec after)
 	| IF (e,s1,s2) -> if (casRec == [])
 			then
+			( 	(*Printf.printf "beforeNowAfter 1-> %s" nameFunction ;*)
 				if(search_call nameFunction s1 || search_call nameFunction s2)
 				then 
-				let statement= (IF (e,s1,s2)) in
-					if(apCall statement nameFunction)
-					then 
-						let re,apC=apCallStat statement nameFunction [] in
-						(before, (casRec @ [re]), (after @ apC))
-					else (before, (casRec @ [IF (e,s1,s2)]), after)	
+				(	(*Printf.printf "beforeNowAfter 2-> %s" nameFunction ;*)
+						let statement= (IF (e,s1,s2)) in
+							if(apCall statement nameFunction)
+							then 
+								let re,apC=apCallStat statement nameFunction [] in
+								(before, (casRec @ [re]), (after @ apC))
+							else (before, (casRec @ [IF (e,s1,s2)]), after)	
+				)
 				else ((before@ [IF (e,s1,s2)]), casRec, after)
-
+			)
 			else (before, casRec, (after @ [IF (e,s1,s2)]))
-	| stat-> if (casRec == []) then (before @ [stat],casRec,after) else (before,casRec,after@ [stat])
+	| STAT_LINE (st,_,_) -> beforeNowAfter st nameFunction before casRec after
+	(*|STAT_LINE (s,_,_) -> apCall s nameFunction*)
+	| stat->  (*Printf.printf "beforeNowAfter OTHER\n" ;*)if (casRec == []) then (before @ [stat],casRec,after) else (before,casRec,after@ [stat])
 
 
 
@@ -300,7 +308,7 @@ and apCall stat nameFunction = match stat with
 	|DEFAULT (s) -> apCall s nameFunction
 	|LABEL (_,s) -> apCall s nameFunction
 	|STAT_LINE (s,_,_) -> apCall s nameFunction
-	|(_) -> false
+	|(_) -> (* Printf.printf "search apCall OTHER\n" ; *)false
 
 (** distinguish between statement after and before recursive call
 @param stat					statement	
@@ -426,7 +434,7 @@ match stat with
 						if (search_call nameFunction s2)
 						then
 							if (lastIF s2 nameFunction)
-							then (substituteCall s2 nameFunction ans)
+							then ((*Printf.printf "lastIF 3 \n" ;*)(substituteCall s2 nameFunction ans))
 							else IF (BINARY(bop,e1,e2), s1, (substituteCall s2 nameFunction ans))
 						else
 							IF (BINARY(bop,e1,e2),s1,s2)
@@ -451,8 +459,11 @@ match stat with
 	@param	nameParameter		name of recursive parameter
 	@param numpara			position of recursive parameter
 	@return				((casZero,value of argument for recursive),(operateur condition, valeur condition))
+
+(infoCall casRec nameFunction nameParameter numpara) 
 *) 
 and infoCall stat  nameFunction nameParameter numpara=
+(*Cprint.print_statement stat ;Printf.printf "infoCall -> %s %s %d" nameFunction nameParameter numpara;*)
 match stat with
 	IF(BINARY(bop,e1,e2),b,c)->
 			if (search_call nameFunction b)
@@ -462,12 +473,12 @@ match stat with
 				if (search_call nameFunction c)
 				then
 					if (lastIF c nameFunction) 
-					then 
+					then ((*Printf.printf "lastIF 2 \n" ;*)
 						if (expr_contains_parameter e1 nameParameter)
 						then ((b,(location_arg c nameFunction numpara)),(bop,e1))
-						else ((b,(location_arg c nameFunction numpara)),(bop,e2))
+						else ((b,(location_arg c nameFunction numpara)),(bop,e2)))
 					else infoCall c nameFunction nameParameter numpara
-				else failwith("infoCall : not recursive")
+				else failwith("frontc/iftofor.ml : not recursive")
 
 	|IF(UNARY(uop,e),b,c) -> let u=UNARY(uop,e) in let next=IF((unary_become_binary u),b,c) in infoCall next nameFunction nameParameter numpara
 	|BLOCK(d) -> infoCall (snd d) nameFunction nameParameter numpara
@@ -482,7 +493,8 @@ match stat with
 	| DEFAULT (s) -> infoCall s  nameFunction nameParameter numpara
 	| LABEL (_,s) -> infoCall s  nameFunction nameParameter numpara
 	| STAT_LINE (s,_,_) -> infoCall s  nameFunction nameParameter numpara
-	|_ -> failwith("infoCall : not recursive")
+	
+	|_ -> (*Cprint.print_statement stat ;*)failwith("frontc/iftofor.ml : not recursive")
 
 
 
@@ -537,8 +549,8 @@ match stat with
 and op_with_call casRec nameFunction= 
 match casRec with
 	COMPUTATION(BINARY(_,e1,e2)) -> (e_call nameFunction e1 || e_call nameFunction e2)
-	|COMPUTATION(CALL(_)) -> false
-	|RETURN(CALL(_)) -> false
+	(*|COMPUTATION(CALL(_)) -> false
+	|RETURN(CALL(_)) -> false*)
 	|RETURN(BINARY(_,e1,e2)) -> (e_call nameFunction e1 || e_call nameFunction e2)
 	|BLOCK (_,s) -> op_with_call s nameFunction
 	|SEQUENCE (a,b) -> (op_with_call b nameFunction) || (op_with_call a nameFunction)
@@ -551,7 +563,8 @@ match casRec with
 	|DEFAULT (s) -> op_with_call s nameFunction
 	|LABEL (_,s) -> op_with_call s nameFunction
 	|STAT_LINE (s,_,_) -> op_with_call s nameFunction
-	|(_) -> false
+	(*|(_) -> false*)
+	|_-> false
 	
 
 (** return an expression includes in statement 
@@ -574,7 +587,7 @@ match stat with
 	|CASE (_,s) -> comp_to_const s nameFunction 
 	|LABEL (_,s) -> comp_to_const s nameFunction 
 	|STAT_LINE (s,_,_) -> comp_to_const s nameFunction 
-	|_ -> failwith ("comp_to_const not return")
+	|_ -> failwith ("frontc/iftofor.ml : comp_to_const not return")
 
 
 (**
@@ -745,20 +758,29 @@ and clean stat =match stat with
 	@return				statement
 *)
 and change_code stat dec nameFunction ans i nameParameter numpara=
+ 
 	let r=beforeNowAfter stat nameFunction [] [] [] in
 	let initVar= constructInit(initparam dec) in
+ 
+
 	let before = changeVarInStat nameParameter i (reconstruct (doList r 1))
+
+
 	and casRec = changeVarInStat nameParameter i (reconstruct (doList r 2))
 	and afterRet = changeVarInStat nameParameter i (reconstruct (doList r 3)) in
 	let after=remove_return(afterRet)
 	and ret= stat_return afterRet in
+
 	let paire = (infoCall casRec nameFunction nameParameter numpara) in
+ 
 	let casNil = (fst (fst paire))
 	and op =  (snd (fst paire))
 	and cond = revers_sign_binary ((fst (snd paire)))
 	and valcond = (snd (snd paire)) in 
 	let casZero= remove_return(SEQUENCE(before,SEQUENCE((casNil),afterRet)) )in
 	let casZ= SEQUENCE(before,SEQUENCE(casNil,afterRet)) in
+
+ 
 	if (op_with_call casRec nameFunction)
 	then
 		if (return_loop casRec nameFunction)
@@ -886,7 +908,7 @@ and change_code stat dec nameFunction ans i nameParameter numpara=
 and name_parameter n = match n with
 	(_,_,(_,PROTO(_,[(_,_,(a,_,_,_))],_),_,_))-> [a]
 	|(b,c,(d,PROTO(e,(_,_,(a,_,_,_))::k,l),m,n)) -> a :: (name_parameter (b,c,(d,PROTO(e,k,l),m,n)))
-	| _ -> failwith("name_parameter")
+	| _ -> failwith("frontc/iftofor.ml : name_parameter")
 
 
 (** return list of parameter types 
@@ -896,7 +918,7 @@ and name_parameter n = match n with
 and type_parameter n = match n with
 	(_,_,(_,PROTO(_,[(a,_,_)],_),_,_))-> [a]
 	|(b,c,(d,PROTO(e,(a,_,_)::h,i),j,k)) -> a :: (type_parameter (b,c,(d,PROTO(e,h,i),j,k)))
-	| _ -> failwith("type_parameter")
+	| _ -> failwith("frontc/iftofor.ml : type_parameter")
 
 
 (** from expression peer to string list*)
@@ -905,14 +927,14 @@ and list_string_of_paire c=
 	VARIABLE(a),VARIABLE(b) -> a::[b]
 	|VARIABLE(a),_ -> [a]
 	|_,VARIABLE(a) -> [a]
-	|_,_ ->failwith ("list_string_of_paire")
+	|_,_ ->failwith ("frontc/iftofor.ml : list_string_of_paire")
 
 
 (** search an element a in l1 return ((itself,this type ), his position) *)
 and search a l1 l2 cpt=  
 	match l1,l2 with 
 	e::l , f::m -> if (compareString e a 0) then ((e,f),cpt) else search a l m (cpt+1)
-	|_,_-> failwith ("search")
+	|_,_-> failwith ("frontc/iftofor.ml : search")
 
 
 (** do name and type of recursive parameter
@@ -925,7 +947,7 @@ and parameter l lname ltype=
 	match l with
 	e::li ->if (List.mem e lname) then (search e lname ltype 1)
 		else parameter li lname ltype
-	|[] -> failwith ("parameter")
+	|[] -> failwith ("frontc/iftofor.ml : parameter")
 
 
 (** return couple expression from IF opb 
@@ -943,9 +965,9 @@ and argCond stat nameFunction=
 				if (search_call nameFunction c)
 				then
 					if (lastIF c nameFunction) 
-					then (e1,e2)	
+					then ( (e1,e2)	)
 					else argCond c nameFunction 
-				else failwith("argCond")
+				else failwith("frontc/iftofor.ml : argCond")
 
 	|IF(UNARY(uop,e),b,c) -> let u=UNARY(uop,e) in let next=IF((unary_become_binary u),b,c) in argCond next nameFunction 
 	|BLOCK(d) -> argCond (snd d) nameFunction
@@ -960,7 +982,7 @@ and argCond stat nameFunction=
 	| DEFAULT (s) -> argCond s nameFunction
 	| LABEL (_,s) -> argCond s nameFunction
 	| STAT_LINE (s,_,_) -> argCond s nameFunction
-	|_ -> failwith("argCond 2")
+	|_ -> failwith("frontc/iftofor.ml : argCond 2")
 
 
 (** return name of fonction *)
@@ -977,7 +999,7 @@ and editListVarSuite def=
 match def with
 	DECDEF (_,_,[])-> []
 	|DECDEF (b,s,(n,_,_,_)::l) -> let a=DECDEF(b,s,l) in n:: (editListVarSuite a)
-	|_ -> failwith("argument out editListVar")
+	|_ -> failwith("frontc/iftofor.ml : argument out editListVar")
 
 
 (** edit list of variables *)
@@ -1043,14 +1065,18 @@ and addVar l i typ=
 	@param b	body
 	@return		definition
 *)
-and makeover_function sn b =
+and makeover_function sn b = 
 	let m=parameter (list_string_of_paire (argCond (snd b) (nameFunction sn))) (name_parameter sn) (type_parameter sn) in
+ 
 	let nameParameter = fst (fst m) 
 	and typ = (snd (fst m)) 
 	and numpara = snd m in
 	let l=(editListVar (fst b)) in 
 	let ans = createNameVar l "a" in	
 	let i = createNameVar (ans::l) "a" in
+
+ 
+
 	FUNDEF(sn,
 		(
 		(addVar (addVar (fst b) ans typ) i (INT(LONG,SIGNED))),
@@ -1064,19 +1090,21 @@ and makeover_function sn b =
 	@param f	definition	
 	@return		definition
 *)
-and loop_to_for = function
+and loop_to_for = function 
 	FUNDEF (sn,b) -> if (search_rec_ok (nameFunction sn) (snd b)) then makeover_function sn b
 			else FUNDEF (sn,b)
 	| other -> other
 
 
 
-(** transform list loop in for 
+(** transform list loop in for  
 	@param x	definition list
 	@return		definition list
 *)
-and if_to_for (x:Cabs.definition list) = match x with
-	[]->[]
-	|e::l -> (loop_to_for e) :: (if_to_for l)
+and if_to_for (x:Cabs.definition list) = 
+match x with
+	[]-> []
+	|e::[] -> let res = (loop_to_for e) in   [res]
+	|e::l -> let res = (loop_to_for e) in  res :: (if_to_for l)
 
 
