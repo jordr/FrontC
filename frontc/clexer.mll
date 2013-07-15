@@ -262,9 +262,10 @@ let octdigit = ['0'-'7']
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
 let letter = ['a'- 'z' 'A'-'Z']
 
-let usuffix = ['u' 'U']
-let lsuffix = ['l' 'L']
-let intsuffix = (lsuffix|usuffix|(usuffix lsuffix)|(lsuffix usuffix))?
+let usuffix = ('u'|'U')
+let lsuffix = ('l'|'L')
+let llsuffix = ("ll"|"LL")
+let intsuffix = (llsuffix|lsuffix|usuffix|(usuffix lsuffix)|(lsuffix usuffix)|(llsuffix usuffix)|(usuffix llsuffix))?
 let floatsuffix = ['f' 'F' 'l' 'L']
 
 let intnum = decdigit+ intsuffix?
