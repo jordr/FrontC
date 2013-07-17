@@ -3,7 +3,9 @@ TESTS=\
 	gnuattr.c \
 	melted.c \
 	volatile.c \
-	bitfield.c
+	bitfield.c \
+	isuffix.c \
+	onlytdef.c
 FAILURE=\
 	bad.c
 TOOL = ../printc/printc

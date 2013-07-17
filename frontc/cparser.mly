@@ -352,7 +352,7 @@ global:
 			{ OLDFUNDEF (set_single $1 $2, List.rev $3, (snd $4)) }
 |		global_type SEMICOLON
 			{ONLYTYPEDEF (set_name_group $1 [])}
-|		TYPEDEF typedef_type typedef_defs SEMICOLON
+|		TYPEDEF typedef_type typedef_defs_opt SEMICOLON
 			{let _ = List.iter (fun (id, _, _, _) -> Clexer.add_type id) $3 in
 			TYPEDEF (set_name_group (fst $2, snd $2) $3, [])}
 |		gcc_attribute TYPEDEF typedef_type typedef_defs SEMICOLON
@@ -619,6 +619,11 @@ typedef_qual:
 |		typedef_qual qual_type			{apply_qual $1 $2}
 |		typedef_qual CONST				{(fst $1, BASE_CONST::(snd $1))}
 |		typedef_qual VOLATILE			{(fst $1, BASE_VOLATILE::(snd $1))}
+;
+
+typedef_defs_opt:
+		/* empty */						{ [("", NO_TYPE, [], NOTHING)] }
+|		typedef_defs					{ $1 }
 ;
 typedef_defs:
 		typedef_def						{[$1]}
