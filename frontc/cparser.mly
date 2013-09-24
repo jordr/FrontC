@@ -396,10 +396,11 @@ global_defs:
 ;
 global_def:
 		global_dec opt_gcc_fun_attributes
-			{(fst $1, snd $1, $2, NOTHING)}
-|		global_dec opt_gcc_fun_attributes EQ init_expression
-			{(fst $1, snd $1, $2, $4)}
+			{ (fst $1, snd $1, $2, NOTHING) }
+|		global_dec opt_gcc_fun_attributes  EQ init_expression
+			{ (fst $1, snd $1, $2, $4) }
 ;
+
 global_dec:
 		IDENT
 			{($1, set_tline NO_TYPE)}
@@ -559,9 +560,9 @@ local_defs:
 |		local_defs COMMA local_def		{$3::$1}
 ;
 local_def:
-		local_dec opt_gcc_attributes
+		local_dec opt_gcc_fun_attributes
 			{(fst $1, snd $1, $2, NOTHING)}
-|		local_dec opt_gcc_attributes EQ init_expression
+|		local_dec opt_gcc_fun_attributes EQ init_expression
 			{(fst $1, snd $1, $2, $4)}
 ;
 local_dec:
@@ -1133,14 +1134,18 @@ statement:
 			{set_line $1 (GOTO $2)}
 |		ASM LPAREN CST_STRING RPAREN SEMICOLON
 			{ ASM $3 }
-|		ASM LPAREN CST_STRING gnu_asm_io gnu_asm_io opt_gnu_asm_mods RPAREN SEMICOLON
-			{ Clexer.test_gcc(); GNU_ASM ($3, List.rev $4, List.rev $5, List.rev $6) }
-|		ASM VOLATILE LPAREN CST_STRING gnu_asm_io gnu_asm_io opt_gnu_asm_mods RPAREN SEMICOLON
-			{ Clexer.test_gcc(); GNU_ASM_VOLATILE ($4, List.rev $5, List.rev $6, List.rev $7) }
+|		ASM LPAREN CST_STRING gnu_asm_io opt_gnu_asm_io RPAREN SEMICOLON
+			{ Clexer.test_gcc(); GNU_ASM ($3, List.rev $4, List.rev (fst $5), List.rev (snd $5)) }
+|		ASM VOLATILE LPAREN CST_STRING gnu_asm_io opt_gnu_asm_io RPAREN SEMICOLON
+			{ Clexer.test_gcc(); GNU_ASM_VOLATILE ($4, List.rev $5, List.rev (fst $6), List.rev (snd $6)) }
 ;
 
 
 /*** GNU asm ***/
+opt_gnu_asm_io:
+	/* empty */						{ ([], []) }
+|	gnu_asm_io opt_gnu_asm_mods		{ ($1, $2) }
+;
 gnu_asm_io:
 	COLON gnu_asm_args
 		{ $2 }
@@ -1247,7 +1252,7 @@ opt_gcc_fun_attributes:
 
 asm_attribute:
 	ASM LPAREN string_list RPAREN
-		{ Clexer.test_gcc(); [GNU_CALL("__asm__", [GNU_CST (CONST_STRING $3)])] }
+		{ Clexer.test_gcc(); [GNU_CALL("__asm__", [GNU_CST (CONST_STRING $3 )])] }
 
 %%
 
