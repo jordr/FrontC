@@ -310,7 +310,7 @@ let rec transform (stat : statement) (hdl : handle) : statement * handle =
 
 	match stat with
 	
-	NOP | GNU_ASM _ | ASM _ -> (stat, hdl)
+	NOP | GNU_ASM _ | ASM _ | GNU_ASM_VOLATILE _ -> (stat, hdl)
 		
 	| COMPUTATION exp -> (COMPUTATION exp, hdl)
 	

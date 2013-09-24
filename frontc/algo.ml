@@ -75,7 +75,7 @@ let rec cabs2cal (stat : Cabs.statement) : node =
 	match stat with
 	  Cabs.NOP -> (null, null, NOP)
 	| Cabs.COMPUTATION exp -> (null, null, COMPUTATION exp)
-	| Cabs.GNU_ASM _ | Cabs.ASM _ -> (null, null, OTHER stat)
+	| Cabs.GNU_ASM _ | Cabs.ASM _ | Cabs.GNU_ASM_VOLATILE _ -> (null, null, OTHER stat)
 	| Cabs.BLOCK (decs, stat') ->
 		(null, null, BLOCK (decs, cabs2cal stat'))
 	| Cabs.SEQUENCE (stat1, stat2) ->

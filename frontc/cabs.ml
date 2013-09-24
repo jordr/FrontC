@@ -161,6 +161,8 @@ and statement =
 		(** Classical "asm" support. *)
 	| GNU_ASM of string * gnu_asm_arg list * gnu_asm_arg list * string list
 		(** GNU "asm" support. *)
+	| GNU_ASM_VOLATILE of string * gnu_asm_arg list * gnu_asm_arg list * string list
+		(** "asm volatile" support. *)
 	| STAT_LINE of statement * string * int
 		(** Information the filename and the line number of the contained statement. *)
 

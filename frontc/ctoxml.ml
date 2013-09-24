@@ -167,6 +167,10 @@ and convert_stat stat =
 		-> Cxml.new_elt "gnu_asm" []
 			((Cxml.new_elt "text" [] [Cxml.new_text text])
 			::(convert_gnu_asm outs ins clobbers))
+	| GNU_ASM_VOLATILE (text, outs, ins, clobbers)
+		-> Cxml.new_elt "gnu_asm_volatile" []
+			((Cxml.new_elt "text" [] [Cxml.new_text text])
+			::(convert_gnu_asm outs ins clobbers))
 	| STAT_LINE (stat, file, line)
 		-> Cxml.new_elt "stat_line"
 			[("file", file); ("line", (string_of_int line))]

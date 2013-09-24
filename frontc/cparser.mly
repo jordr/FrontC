@@ -1135,6 +1135,8 @@ statement:
 			{ ASM $3 }
 |		ASM LPAREN CST_STRING gnu_asm_io gnu_asm_io opt_gnu_asm_mods RPAREN SEMICOLON
 			{ Clexer.test_gcc(); GNU_ASM ($3, List.rev $4, List.rev $5, List.rev $6) }
+|		ASM VOLATILE LPAREN CST_STRING gnu_asm_io gnu_asm_io opt_gnu_asm_mods RPAREN SEMICOLON
+			{ Clexer.test_gcc(); GNU_ASM_VOLATILE ($4, List.rev $5, List.rev $6, List.rev $7) }
 ;
 
 

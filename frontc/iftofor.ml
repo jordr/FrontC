@@ -344,7 +344,7 @@ match stat with
 *)
 and reconstruct l =
 match l with
-	NOP ::_ -> NOP
+	  NOP ::_ -> NOP
 	| COMPUTATION (e) ::_ -> COMPUTATION (e)
 	| BLOCK (b) ::[] -> BLOCK(b)
 	| BLOCK (b) ::l -> BLOCK (fst(b),reconstruct l)
@@ -367,8 +367,9 @@ match l with
 	| GOTO (st) ::_ -> GOTO (st)
 	| ASM (st) ::_ -> ASM (st)
 	| GNU_ASM (a,b,c,d) ::_ -> GNU_ASM (a,b,c,d)
+	| GNU_ASM_VOLATILE (a,b,c,d) ::_ -> GNU_ASM_VOLATILE (a,b,c,d)
 	| STAT_LINE (s,i,st) ::_ -> STAT_LINE (s,i,st) 
-	|[] -> NOP
+	| [] -> NOP
 
 
 

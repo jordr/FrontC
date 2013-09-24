@@ -672,6 +672,18 @@ and print_statement stat =
 		end;
 		print ");";
 		new_line ()
+	| GNU_ASM_VOLATILE (desc, output, input, mods) ->
+		print ("asm volatile (" ^ (escape_string desc) ^ "\"");
+		print " : ";
+		print_commas false print_gnu_asm_arg output;
+		print " : ";
+		print_commas false print_gnu_asm_arg input;
+		if mods <> [] then begin
+			print " : ";
+			print_commas false print mods
+		end;
+		print ");";
+		new_line ()
 	| STAT_LINE (stat, file, line) ->
 		print_line file line;
 		print_statement stat
