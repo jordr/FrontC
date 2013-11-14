@@ -194,13 +194,13 @@ let parse args =
 		| (PREPROC cmd) :: tl ->
 			cpp_cmd := cmd; scan tl
 		| (DEF def) :: tl ->
-			cpp_opts := !cpp_opts ^ " -D" ^ def; scan tl
+			cpp_opts := !cpp_opts ^ " '-D" ^ def ^ "'"; scan tl
 		| (UNDEF undef) :: tl ->
 			cpp_opts := !cpp_opts ^ " -U" ^ undef; scan tl
 		| (INCLUDE file) :: tl ->
-			cpp_opts := !cpp_opts ^ " -i" ^ file; scan tl
+			cpp_opts := !cpp_opts ^ " '-i" ^ file ^ "'"; scan tl
 		| (INCLUDE_DIR dir) :: tl ->
-			cpp_opts := !cpp_opts ^ " -I" ^ dir; scan tl
+			cpp_opts := !cpp_opts ^ " '-I" ^ dir ^ "'"; scan tl
 		| (OPTION opt) :: tl ->
 			cpp_opts := !cpp_opts ^ " " ^ opt; scan tl
 		| (ERROR chan) :: tl ->
