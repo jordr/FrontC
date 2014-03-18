@@ -3,9 +3,13 @@ include Makefile.head
 
 PROJECT=Frontc
 VERSION=3.4
-RELEASE=3
+RELEASE=4
 SUBDIRS = frontc ctoxml printc calipso mergec
 DIST+=AUTHORS ChangeLog COPYING INSTALL NEWS README
+
+ifdef NATIVE
+export PROG_FLAGS=native
+endif
 
 include Makefile.tail
 

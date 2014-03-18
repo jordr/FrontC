@@ -12,9 +12,9 @@ OCAML_INC += ../frontc
 OCAML_LIB += unix ../frontc/frontc
 DIST += test/*.c test/*.out
 
-$(eval $(call ocaml_prog,calipso,$(SOURCES)))
+$(eval $(call ocaml_prog,calipso,$(SOURCES),$(PROG_FLAGS)))
 
-$(eval $(call ocaml_prog,calipso_stat,$(STAT_SOURCES)))
+$(eval $(call ocaml_prog,calipso_stat,$(STAT_SOURCES),$(PROG_FLAGS)))
 
 test: test_rk
 TMP = /tmp/calipso.out
