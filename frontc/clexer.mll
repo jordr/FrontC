@@ -257,6 +257,7 @@ let scan_oct_escape str =
 	))
 }
 
+let bindigit = ['0' '1']
 let	decdigit = ['0'-'9']
 let octdigit = ['0'-'7']
 let hexdigit = ['0'-'9' 'a'-'f' 'A'-'F']
@@ -271,6 +272,7 @@ let floatsuffix = ['f' 'F' 'l' 'L']
 let intnum = decdigit+ intsuffix?
 let octnum = '0' octdigit+ intsuffix?
 let hexnum = '0' ['x' 'X'] hexdigit+ intsuffix?
+let binnum = '0' ['b' 'B'] bindigit+ intsuffix?
 
 let exponent = ['e' 'E']['+' '-']? decdigit+
 let fraction  = '.' decdigit+
@@ -300,6 +302,7 @@ rule initial =
 	|		hexnum			{CST_INT (Lexing.lexeme lexbuf)}
 	|		octnum			{CST_INT (Lexing.lexeme lexbuf)}
 	|		intnum			{CST_INT (Lexing.lexeme lexbuf)}
+	|		binnum			{CST_INT (Lexing.lexeme lexbuf)}
 
 	|		"!quit!"		{EOF}
 	|		"..."			{ELLIPSIS(curfile(), curline())}
