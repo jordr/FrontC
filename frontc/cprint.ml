@@ -668,7 +668,7 @@ and print_statement stat =
 		print_commas false print_gnu_asm_arg input;
 		if mods <> [] then begin
 			print " : ";
-			print_commas false print mods
+			print_commas false print (List.map (fun m -> "\"" ^ m ^ "\"") mods)
 		end;
 		print ");";
 		new_line ()
@@ -680,7 +680,7 @@ and print_statement stat =
 		print_commas false print_gnu_asm_arg input;
 		if mods <> [] then begin
 			print " : ";
-			print_commas false print mods
+			print_commas false print (List.map (fun m -> "\"" ^ m ^ "\"") mods)
 		end;
 		print ");";
 		new_line ()

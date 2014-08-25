@@ -383,6 +383,7 @@ global_mod:
 |		CONST							{BASE_CONST}
 |		VOLATILE						{BASE_VOLATILE}
 |		EXTERN							{BASE_STORAGE EXTERN}
+|		REGISTER						{BASE_STORAGE REGISTER}
 |		gcc_attribute					{ BASE_GNU_ATTR $1 }
 ;
 global_qual:
@@ -1245,6 +1246,8 @@ gnu_id:
 		{ "__const" }
 |	INLINE
 		{ "__inline" }
+|	ASM
+		{ "__asm" }
 ;
 
 opt_gcc_fun_attributes:
