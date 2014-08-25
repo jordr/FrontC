@@ -187,7 +187,8 @@ let init_lexicon _ =
 	let add (key, token) = StringHashtbl.add lexicon key token in
 	StringHashtbl.clear lexicon;
 	List.iter add keywords;
-	if has_gcc ()  then List.iter add gnu_keywords
+	if has_gcc ()  then
+		List.iter add gnu_keywords
 
 let add_type name =
 	StringHashtbl.add lexicon name (id (NAMED_TYPE name))

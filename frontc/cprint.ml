@@ -661,7 +661,7 @@ and print_statement stat =
 	| ASM desc ->
 		print ("asm(\"" ^ (escape_string desc) ^ "\");")
 	| GNU_ASM (desc, output, input, mods) ->
-		print ("asm(" ^ (escape_string desc) ^ "\"");
+		print ("asm(\"" ^ (escape_string desc) ^ "\"");
 		print " : ";
 		print_commas false print_gnu_asm_arg output;
 		print " : ";
@@ -673,7 +673,7 @@ and print_statement stat =
 		print ");";
 		new_line ()
 	| GNU_ASM_VOLATILE (desc, output, input, mods) ->
-		print ("asm volatile (" ^ (escape_string desc) ^ "\"");
+		print ("asm volatile (\"" ^ (escape_string desc) ^ "\"");
 		print " : ";
 		print_commas false print_gnu_asm_arg output;
 		print " : ";
@@ -692,7 +692,7 @@ and print_gnu_asm_arg (id, desc, exp) =
 	if id <> "" then print ("[" ^ id ^ "]");
 	print ("\"" ^ (escape_string desc) ^ "\"(");
 	print_expression exp 0;
-	print ("\"")
+	print (")")
 
 and print_substatement stat =
 

@@ -1243,6 +1243,8 @@ gnu_id:
 		}
 |	CONST
 		{ "__const" }
+|	INLINE
+		{ "__inline" }
 ;
 
 opt_gcc_fun_attributes:
