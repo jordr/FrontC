@@ -180,7 +180,8 @@ let gnu_keywords : (string * (unit -> Cparser.token)) list = [
 		("__inline", id INLINE);	(* strange: really ? *)
 		("__inline__", id INLINE);
 		("__asm__", id ASM);
-		("__asm", id ASM)
+		("__asm", id ASM);
+		("__volatile__", id VOLATILE)
 	]
 
 let init_lexicon _ =
