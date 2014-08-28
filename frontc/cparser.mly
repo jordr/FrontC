@@ -1133,11 +1133,11 @@ statement:
 			{set_line $1 CONTINUE}
 |		GOTO IDENT SEMICOLON
 			{set_line $1 (GOTO $2)}
-|		ASM LPAREN CST_STRING RPAREN SEMICOLON
+|		ASM LPAREN string_list RPAREN SEMICOLON
 			{ ASM $3 }
-|		ASM LPAREN CST_STRING gnu_asm_io opt_gnu_asm_io RPAREN SEMICOLON
+|		ASM LPAREN string_list gnu_asm_io opt_gnu_asm_io RPAREN SEMICOLON
 			{ Clexer.test_gcc(); GNU_ASM ($3, List.rev $4, List.rev (fst $5), List.rev (snd $5)) }
-|		ASM VOLATILE LPAREN CST_STRING gnu_asm_io opt_gnu_asm_io RPAREN SEMICOLON
+|		ASM VOLATILE LPAREN string_list gnu_asm_io opt_gnu_asm_io RPAREN SEMICOLON
 			{ Clexer.test_gcc(); GNU_ASM_VOLATILE ($4, List.rev $5, List.rev (fst $6), List.rev (snd $6)) }
 ;
 

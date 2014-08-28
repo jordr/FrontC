@@ -5,7 +5,8 @@ TESTS=\
 	volatile.c \
 	bitfield.c \
 	isuffix.c \
-	onlytdef.c
+	onlytdef.c \
+	tricky.c
 FAILURE=\
 	bad.c
 TOOL = ../printc/printc
