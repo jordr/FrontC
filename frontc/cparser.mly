@@ -434,11 +434,17 @@ global_dec:
 
 global_proto:
 		global_dec opt_gcc_attributes
-			{match (snd $1) with
-			  PROTO _
-			| OLD_PROTO _ ->
-				(fst $1, snd $1, $2, NOTHING)
-			| _ -> begin (*fatal();*) assert false end}
+			{
+			  let rec descend d1 d2 =
+			    match (snd d1) with
+			    | PROTO _
+			    | OLD_PROTO _ -> (fst d1, snd d1, d2, NOTHING)
+			    | TYPE_LINE (_,_,bt) -> descend (fst d1, bt) d2
+			    | x -> begin
+			      parse_error();
+			      raise Parsing.Parse_error end in
+			  descend $1 $2}
+ 
 ;
 old_proto:
 		global_dec opt_gcc_attributes
