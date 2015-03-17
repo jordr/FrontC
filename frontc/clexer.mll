@@ -282,7 +282,11 @@ let floatraw = (intnum? fraction)
 			|(intnum exponent)
 			|(intnum? fraction exponent)
 			|(intnum '.')
+let hfloatraw =	('0' ['x' 'X'] hexdigit* '.' hexdigit+)
+			  |	('0' ['x' 'X'] hexdigit+ ['p' 'P'] ['+' '-']? decdigit+)
+			  |	('0' ['x' 'X'] hexdigit* '.' hexdigit+ ['p' 'P'] ['+' '-']? decdigit+)
 let floatnum = floatraw floatsuffix?
+let hfloatnum = hfloatraw floatsuffix?
 
 let ident = (letter|'_')(letter|decdigit|'_')*
 let blank = [' ' '\t' '\n' '\r']
@@ -301,6 +305,7 @@ rule initial =
 	|		'\''			{CST_CHAR (chr lexbuf)}
 	|		'"'				{CST_STRING (str lexbuf)}
 	|		floatnum		{CST_FLOAT (Lexing.lexeme lexbuf)}
+	|		hfloatnum		{CST_FLOAT (Lexing.lexeme lexbuf)}
 	|		hexnum			{CST_INT (Lexing.lexeme lexbuf)}
 	|		octnum			{CST_INT (Lexing.lexeme lexbuf)}
 	|		intnum			{CST_INT (Lexing.lexeme lexbuf)}
