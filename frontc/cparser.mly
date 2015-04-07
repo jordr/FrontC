@@ -14,26 +14,26 @@
 **		(2) GNU __attribute__ modifier, GNU ({ }) statement in expression form.
 **
 ** HISTORY
-**	1.0	2.19.99	Hugues Cassé	First version.
-**	2.0	3.22.99	Hugues Cassé	Large simplification about declarations.
+**	1.0	2.19.99	Hugues Cassï¿½	First version.
+**	2.0	3.22.99	Hugues Cassï¿½	Large simplification about declarations.
 **								"register" parameters added, function pointers,
 **								GCC attributes, typedef full supported.
-**	2.1	4.23.99	Hugues Cassé	GNU Statement embedded statements managed.
+**	2.1	4.23.99	Hugues Cassï¿½	GNU Statement embedded statements managed.
 **		a	&x == y was analyzed as ADDROF(EQ(x, y)) corrected into the
 **			right form EQ(ADDROF(x), y)
 **		b	typedef struct ID ... ID; is now accepted.
 **		c	{v1, v2, v3, } now accepted.
 **		d	Spaced string components now accepted. Example: "Hel" "lo !".
-**	3.0	6.1.99	Hugues Cassé	Solve fully the problem of local/field/parameter
+**	3.0	6.1.99	Hugues Cassï¿½	Solve fully the problem of local/field/parameter
 **								with the same identifier to a typedef.
 **	a							const and volatile accepted for basic types
 **								for fields and only-types.
-**	b	10.9.99	Hugues Cassé	Correct priorities of type algebra:
+**	b	10.9.99	Hugues Cassï¿½	Correct priorities of type algebra:
 **								()() > * > []. Add typalg.c for testing it.
 */
 %{
 open Cabs
-let version = "Cparser V3.0b 10.9.99 Hugues Cassé"
+let version = "Cparser V3.0b 10.9.99 Hugues Cassï¿½"
 
 let parse_error _ =
 	Clexer.display_error "Syntax error" (Parsing.symbol_start ()) (Parsing.symbol_end ())
@@ -903,20 +903,24 @@ comp_type:
 			{UNION ($2, List.rev $4)}
 |		ENUM type_name
 			{ENUM ($2, [])}
-|		ENUM LBRACE enum_list RBRACE
+|		ENUM LBRACE enum_list_comma RBRACE
 			{ENUM ("", List.rev $3)}
-|		ENUM type_name LBRACE enum_list RBRACE
+|		ENUM type_name LBRACE enum_list_comma RBRACE
 			{ENUM ($2, List.rev $4)}
 ;
 type_name:
 		IDENT							{$1}
 |		NAMED_TYPE						{$1}
 ;
-enum_list:	enum_name					{[$1]}
-|			enum_list COMMA enum_name	{$3::$1}
+
+enum_list_comma:	enum_list					{ $1 }
+|					enum_list COMMA				{ $1 }
 ;
-enum_name:	IDENT						{($1, NOTHING)}
-|			IDENT EQ expression			{($1, $3)}
+enum_list:			enum_name					{[$1]}
+|					enum_list COMMA enum_name	{$3::$1}
+;
+enum_name:	IDENT								{($1, NOTHING)}
+|			IDENT EQ expression					{($1, $3)}
 ;
 
 
