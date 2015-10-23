@@ -134,43 +134,45 @@ module StringHashtbl = Hashtbl.Make(HashString)
 let lexicon = StringHashtbl.create 211
 let keywords =
 	[
-		("auto", id AUTO);
-		("const", id CONST); ("__const", id CONST);
-		("static", id STATIC);
-		("extern", id EXTERN);
-		("long", id LONG);
-		("short", id SHORT);
-		("register", id REGISTER);
-		("signed", id SIGNED);
-		("unsigned", id UNSIGNED);
-		("volatile", id VOLATILE);
+		("__const", id CONST);
 		("__restrict", id RESTRICT);
-		("restrict", id RESTRICT);	(** Non-supported by GCC ??? *)
+		("_Bool", id (NAMED_TYPE "_Bool"));
+		("_Complex", id (NAMED_TYPE "_Complex"));
+		("_Imaginery", id (NAMED_TYPE "_Imaginery"));
+		("asm", id ASM);
+		("auto", id AUTO);
+		("break", fun _ -> BREAK (curfile(), curline()));
 		("char", id CHAR);
-		("int", id INT);
-		("float", id FLOAT);
+		("case", fun _ -> CASE (curfile(), curline()));
+		("const", id CONST);
+		("continue", fun _ -> CONTINUE (curfile(), curline()));
+		("default", fun _ -> DEFAULT (curfile(), curline()));
+		("do", fun _ -> DO (curfile(), curline()));
 		("double", id DOUBLE);
-		("void", id VOID);
+		("else", fun _ -> ELSE (curfile(), curline()));
 		("enum", id ENUM);
+		("extern", id EXTERN);
+		("float", id FLOAT);
+		("for", fun _ -> FOR (curfile(), curline()));
+		("goto", fun _ -> GOTO (curfile(), curline()));
+		("if", fun _ -> IF (curfile(), curline()));
+		("inline", id INLINE);	(* C99 *)
+		("int", id INT);
+		("long", id LONG);
+		("register", id REGISTER);
+		("restrict", id RESTRICT);	(** Non-supported by GCC ??? *)
+		("return", fun _ -> RETURN (curfile(), curline()));
+		("short", id SHORT);
+		("signed", id SIGNED);
+		("static", id STATIC);
 		("struct", id STRUCT);
+		("switch", fun _ -> SWITCH (curfile(), curline()));
 		("typedef", id TYPEDEF);
 		("union", id UNION);
-		("break", fun _ -> BREAK (curfile(), curline()));
-		("continue", fun _ -> CONTINUE (curfile(), curline()));
-		("goto", fun _ -> GOTO (curfile(), curline()));
-		("return", fun _ -> RETURN (curfile(), curline()));
-		("switch", fun _ -> SWITCH (curfile(), curline()));
-		("case", fun _ -> CASE (curfile(), curline()));
-		("default", fun _ -> DEFAULT (curfile(), curline()));
+		("unsigned", id UNSIGNED);
+		("void", id VOID);
+		("volatile", id VOLATILE);		
 		("while", fun _ -> WHILE (curfile(), curline()));
-		("do", fun _ -> DO (curfile(), curline()));
-		("for", fun _ -> FOR (curfile(), curline()));
-		("if", fun _ -> IF (curfile(), curline()));
-		("else", fun _ -> ELSE (curfile(), curline()));
-		("asm", id ASM);
-
-		(* C99 : add an option *)
-		("inline", id INLINE);
 	]
 
 (*** Specific GNU ***)

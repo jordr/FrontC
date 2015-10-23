@@ -268,10 +268,11 @@ let set_tline _type =
 %nonassoc 	IF
 %nonassoc 	ELSE
 
+%left 	QUEST
 %left	COMMA
 %right	EQ PLUS_EQ MINUS_EQ STAR_EQ SLASH_EQ PERCENT_EQ
 		AND_EQ PIPE_EQ CIRC_EQ INF_INF_EQ SUP_SUP_EQ
-%right	QUEST COLON
+%left	COLON 	/* QUEST */
 %left	PIPE_PIPE
 %left	AND_AND
 %left	PIPE
