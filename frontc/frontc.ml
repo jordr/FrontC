@@ -240,6 +240,7 @@ let parse args =
 				Clexer.h_gcc = !gcc;
 				Clexer.h_linerec = !linerec;
 				Clexer.h_strict = !strict;
+				Clexer.h_pragma = []
 			};
 			PARSING_OK (Cparser.file
 				Clexer.initial

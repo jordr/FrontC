@@ -1,25 +1,21 @@
-(* FrontC -- lexical analyzer
-**
-** Project: FrontC
-** File:	frontc.mll
-** Version:	1.0e
-** Date:	9.1.99
-** Author:	Hugues Cassé
-**
-**	1.0	3.22.99	Hugues Cassé	First version.
-**	a	4.19.99	Hugues Cassé	Now accept floating notation `<int part>.'.
-**	b	4.26.99	Hugues Cassé	Correctly handle the # <lineno> <file> ...
-**								directive. Previous bug was taking last
-**								integer of the line as line number.
-**	c	6.4.99	Hugues Cassé	Added context handling to manage local variables
-**								and type definition with the same name.
-**	d	8.26.99	Hugues Cassé	Now, manage escape sequences in string and
-**								characters.
-**	e	9.1.99	Hugues Cassé	Fix, '\0' now recognized.
-**	f	10.8.99	Hugues Cassé	Understand "__const" GCC.
-** 1.1	04.150.05 Hugues Cassé	Added support for __XXX__ GNU attributes.
-**								Added "restrict" keyword.
-*)
+(*
+ *	FrontC Lexer
+ *	Copyright (C) 1999  Université de Toulouse <casse@irit.fr>
+ *
+ *	This library is free software; you can redistribute it and/or
+ *	modify it under the terms of the GNU Lesser General Public
+ *	License as published by the Free Software Foundation; either
+ *	version 2.1 of the License, or (at your option) any later version.
+ *	
+ *	This library is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *	Lesser General Public License for more details.
+ *	
+ *	You should have received a copy of the GNU Lesser General Public
+ *	License along with this library; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *)
 {
 open Cparser
 exception Eof
@@ -41,7 +37,8 @@ type handle = {
 	mutable h_file_name: string;
 	h_gcc: bool;
 	h_linerec: bool;
-	h_strict: bool
+	h_strict: bool;
+	mutable h_pragma: (string * int * string) list
 }
 let current_handle = ref {
 		h_interactive = false;
@@ -54,7 +51,8 @@ let current_handle = ref {
 		h_file_name = "";
 		h_gcc = true;
 		h_linerec = false;
-		h_strict = false
+		h_strict = false;
+		h_pragma = []
 	}
 
 let interactive (h : handle) = h.h_interactive
@@ -71,7 +69,10 @@ let curfile _ = (!current_handle).h_file_name
 let curline _ = (!current_handle).h_lineno
 let has_gcc _ = (!current_handle).h_gcc
 let is_strict _ = (!current_handle).h_strict
+let pragma _ = (!current_handle).h_pragma
 
+let add_pragma p = 
+	(!current_handle).h_pragma <- (curfile (), curline (), p) :: (pragma ())
 
 (*
  * Error handling
@@ -298,11 +299,12 @@ let hex_escape = '\\' ['x' 'X'] hexdigit hexdigit
 let oct_escape = '\\' octdigit  octdigit octdigit
 
 rule initial =
-	parse 	"/*"			{let _ = comment lexbuf in initial lexbuf}
-	|		"//"			{test_gcc (); let _ = line_comment lexbuf in initial lexbuf }
-	|		blank			{initial lexbuf}
-	|		'#'				{line lexbuf}
+	parse 	"/*"				{let _ = comment lexbuf in initial lexbuf}
+	|		"//"				{test_gcc (); let _ = line_comment lexbuf in initial lexbuf }
+	|		blank				{initial lexbuf}
+	|		"#" space* "pragma"	{ add_pragma (pragma lexbuf); initial lexbuf }
 	|		'#' space* "line"	{ line lexbuf }
+	|		'#'					{ line lexbuf}
 
 	|		'\''			{CST_CHAR (chr lexbuf)}
 	|		'"'				{CST_STRING (str lexbuf)}
@@ -362,7 +364,7 @@ rule initial =
 	|		','				{COMMA(curfile(), curline())}
 	|		'.'				{DOT}
 	|		"sizeof"		{SIZEOF}
-	|		ident			{scan_ident (Lexing.lexeme lexbuf)}
+	|		ident			{ scan_ident (Lexing.lexeme lexbuf)}
 
 	|		eof				{EOF}
 	|		_				{display_error
@@ -404,7 +406,7 @@ and str =
 	|		"\\0"			{(String.make 1 (Char.chr 0)) ^ (str lexbuf)}
 	|		escape			{let cur = scan_escape (String.sub
 							(Lexing.lexeme lexbuf) 1 1) in cur ^ (str lexbuf)}
-	|		_				{let cur = Lexing.lexeme lexbuf in cur ^  (str lexbuf)}
+	|		_				{ (Lexing.lexeme lexbuf) ^  (str lexbuf)}
 
 and chr =
 	parse	'\''			{""}
@@ -416,6 +418,10 @@ and chr =
 	|		escape			{let cur = scan_escape (String.sub
 							(Lexing.lexeme lexbuf) 1 1) in cur ^ (chr lexbuf)}
 	|		_				{let cur = Lexing.lexeme lexbuf in cur ^ (chr lexbuf)}
+
+and pragma =
+	parse	'\n'			{ "" }
+	|		_				{ (Lexing.lexeme lexbuf) ^ (pragma lexbuf) }
 
 {
 
