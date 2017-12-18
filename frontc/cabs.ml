@@ -281,6 +281,8 @@ and gnu_attr =
 		(** single identifier *)
 	| GNU_CST of constant
 		(** constant value *)
+	| GNU_GTYPE of base_type
+		(** type value *)
 	| GNU_EXTENSION
 		(** support of __extension__ keyword *)
 	| GNU_INLINE

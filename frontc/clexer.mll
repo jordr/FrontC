@@ -304,7 +304,7 @@ rule initial =
 	|		blank				{initial lexbuf}
 	|		"#" space* "pragma"	{ add_pragma (pragma lexbuf); initial lexbuf }
 	|		'#' space* "line"	{ line lexbuf }
-	|		'#'					{ line lexbuf}
+	|		'#'					{ line lexbuf }
 
 	|		'\''			{CST_CHAR (chr lexbuf)}
 	|		'"'				{CST_STRING (str lexbuf)}
@@ -384,8 +384,8 @@ and line_comment =
 and line =
 	parse	'\n'			{initial lexbuf}
 	|	blank				{line lexbuf}
-	|	intnum				{set_line (int_of_string (Lexing.lexeme lexbuf));
-							file lexbuf}
+	|	intnum				{	set_line (int_of_string (Lexing.lexeme lexbuf));
+								file lexbuf}
 	|	_					{endline lexbuf}
 and file =
 	parse '\n'				{initial lexbuf}
@@ -421,7 +421,7 @@ and chr =
 
 and pragma =
 	parse	'\n'			{ "" }
-	|		_				{ (Lexing.lexeme lexbuf) ^ (pragma lexbuf) }
+	|		_ 				{ let c = Lexing.lexeme lexbuf in c ^ (pragma lexbuf) }
 
 {
 

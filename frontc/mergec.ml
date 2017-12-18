@@ -121,7 +121,7 @@ let keep_multiple = fun name_table ->
 *)
 let rec is_name_in_table = fun name_table name ->
 	match name_table with
-		| (a_name, _) :: t -> (a_name = name) or (is_name_in_table t name)
+		| (a_name, _) :: t -> (a_name = name) || (is_name_in_table t name)
 		| [] -> false
 
 (** Utility functions to manage Cabs.name list elements. *)

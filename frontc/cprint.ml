@@ -762,6 +762,8 @@ and print_attribute attr =
 		print "__extension__"
 	| GNU_INLINE ->
 		print "__inline__"
+	| GNU_GTYPE t ->
+		print_onlytype t;
 
 
 (*

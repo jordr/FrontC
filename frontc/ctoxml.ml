@@ -321,6 +321,8 @@ and convert_gnu_attr attr =
 		-> Cxml.new_elt "inline" [] []
 	| GNU_CALL (id, attrs)
 		-> Cxml.new_elt "call" [("id", id)] (List.map convert_gnu_attr attrs)
+	| GNU_GTYPE t
+		-> convert_type t
 
 and convert_fundef _type store name vars body =
 

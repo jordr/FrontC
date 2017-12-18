@@ -1,3 +1,22 @@
+/*
+	FrontC -- representation of C sources.
+	Copyright (C) 2012 IRIT - université de Toulouse
+
+	This library is free software; you can redistribute it and/or
+	modify it under the terms of the GNU Lesser General Public
+	License as published by the Free Software Foundation; either
+	version 2.1 of the License, or (at your option) any later version.
+
+	This library is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	Lesser General Public License for more details.
+
+	You should have received a copy of the GNU Lesser General Public
+	License along with this library; if not, write to the Free Software
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
 /* NOTE: in the symbol table, local definition must replace type definition
 **		in order to correctly parse local variable in functions body.
 **		This is the only way to correctly handle this kind of exception,
@@ -12,24 +31,6 @@
 **		(1) Old-parameter passing style with an exception: the first old-style
 **		parameter name can't be a type name.
 **		(2) GNU __attribute__ modifier, GNU ({ }) statement in expression form.
-**
-** HISTORY
-**	1.0	2.19.99	Hugues Cass�	First version.
-**	2.0	3.22.99	Hugues Cass�	Large simplification about declarations.
-**								"register" parameters added, function pointers,
-**								GCC attributes, typedef full supported.
-**	2.1	4.23.99	Hugues Cass�	GNU Statement embedded statements managed.
-**		a	&x == y was analyzed as ADDROF(EQ(x, y)) corrected into the
-**			right form EQ(ADDROF(x), y)
-**		b	typedef struct ID ... ID; is now accepted.
-**		c	{v1, v2, v3, } now accepted.
-**		d	Spaced string components now accepted. Example: "Hel" "lo !".
-**	3.0	6.1.99	Hugues Cass�	Solve fully the problem of local/field/parameter
-**								with the same identifier to a typedef.
-**	a							const and volatile accepted for basic types
-**								for fields and only-types.
-**	b	10.9.99	Hugues Cass�	Correct priorities of type algebra:
-**								()() > * > []. Add typalg.c for testing it.
 */
 %{
 open Cabs
@@ -1240,8 +1241,11 @@ gnu_arg:
 		{ GNU_ID $1 }
 |	constant
 		{ GNU_CST $1 }
+
 |	gnu_id LPAREN opt_gnu_args RPAREN
 		{ GNU_CALL ($1, List.rev $3) }
+|	only_type
+		{ GNU_GTYPE $1 }
 ;
 
 gnu_id:
