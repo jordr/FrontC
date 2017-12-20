@@ -708,39 +708,39 @@ field_defs:
 |		field_def						{[$1]}
 ;
 field_def:
-		field_dec						{(fst $1, snd $1, [], NOTHING)}
+		field_dec						{let (i, t, g) = $1 in (i, t, g, NOTHING)}
 ;
 field_dec:
 		/* emtpy */
-			{("", NO_TYPE)}
-|		IDENT
-			{($1, NO_TYPE)}
+			{("", NO_TYPE, [])}
+|		IDENT opt_gcc_attributes
+			{($1, NO_TYPE, $2)}
 |		NAMED_TYPE
-			{($1, NO_TYPE)}
+			{($1, NO_TYPE, [])}
 |		STAR field_dec
-			{(fst $2, set_type (PTR NO_TYPE) (snd $2))}
+			{let (i, t, g) = $2 in (i, set_type (PTR NO_TYPE) t, g)}
 |		STAR RESTRICT field_dec
-			{(fst $3, set_type (RESTRICT_PTR NO_TYPE) (snd $3))}
+			{let (i, t, g) = $3 in (i, set_type (RESTRICT_PTR NO_TYPE) t, g)}
 |		STAR CONST field_dec
-			{(fst $3, set_type (CONST (PTR NO_TYPE)) (snd $3))}
+			{let (i, t, g) = $3 in (i, set_type (CONST (PTR NO_TYPE)) t, g)}
 |		STAR VOLATILE field_dec
-			{(fst $3, set_type (VOLATILE (PTR NO_TYPE)) (snd $3))}
+			{let (i, t, g) = $3 in (i, set_type (VOLATILE (PTR NO_TYPE)) t, g)}
 |		STAR gcc_attributes field_dec
-			{(fst $3, set_type (GNU_TYPE ($2, PTR NO_TYPE)) (snd $3))}
+			{let (i, t, g) = $3 in (i, set_type (GNU_TYPE ($2, PTR NO_TYPE)) t, g)}
 |		field_dec LBRACKET comma_expression RBRACKET
-			{(fst $1, set_type (ARRAY (NO_TYPE, smooth_expression $3)) (snd $1))}
+			{let (i, t, g) = $1 in (i, set_type (ARRAY (NO_TYPE, smooth_expression $3)) t, g)}
 |		field_dec LBRACKET RBRACKET
-			{(fst $1, set_type (ARRAY (NO_TYPE, NOTHING)) (snd $1))}
+			{let (i, t, g) = $1 in (i, set_type (ARRAY (NO_TYPE, NOTHING)) t, g)}
 |		field_dec LPAREN parameters RPAREN
-			{(fst $1, PROTO (snd $1, fst $3, snd $3))}
+			{let (i, t, g) = $1 in (i, PROTO (t, fst $3, snd $3), g)}
 |		LPAREN field_dec RPAREN LPAREN parameters RPAREN
-			{(fst $2, set_type (PROTO (NO_TYPE, fst $5, snd $5)) (snd $2))}
+			{let (i, t, g) = $2 in (i, set_type (PROTO (NO_TYPE, fst $5, snd $5)) t, g)}
 |		LPAREN field_dec RPAREN
 			{$2}
 |		IDENT COLON expression
-			{($1, BITFIELD (NO_TYPE, $3))}
+			{($1, BITFIELD (NO_TYPE, $3), [])}
 |		COLON expression
-			{("", BITFIELD (NO_TYPE, $2))}
+			{("", BITFIELD (NO_TYPE, $2), [])}
 ;
 
 
