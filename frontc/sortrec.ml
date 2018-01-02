@@ -447,7 +447,7 @@ match x with
 	| FUNDEF (sn,b)::r -> let d=(FUNDEF (sn,b)) in 
 			if (without_rec d file) 
 			then  
-			begin let name =nameFunction sn in  Printf.printf "\ntest -> %s \n " name ;
+			begin let name =nameFunction sn in   
 				output_string out name ;
 				let multiLevel = (match get_fun_body name file with 
 					FUNCBODY(b)-> (*Cprint.print_statement b ;*)

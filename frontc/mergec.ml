@@ -20,14 +20,261 @@
 
 (** This modules work on C Cabs.file values (produced by Frontc). *)
 open Cabs
-
+open Stack
 (** Generic functions to manage a C Cabs file.
 
 	Those functions works only on top-level definitions.
 *)
+
+	let includeFile_table :  (string) list ref = ref [] (*MDM add *)
+	let current_includeFile :  (string) list ref = ref [] (*MDM add *)
 	
+	(* name tables *)
+	let extern_table = ref []
+	let global_table = ref []
+	
+	let typedef_table : (string *int ) list   ref = ref []
+	let static_func_table :  (string *int ) list ref = ref []
+	let onlytypedef_table :  (string *int ) list ref = ref []
+	
+	
+(*MDM add  *)
+let isStatic sto = match sto with | STATIC -> true|_->false		
+
+let rec unionOrEnumType typ =
+
+(match typ with
+	(*| BITFIELD (t, n) -> unionOrEnumType t var; print ": "; print_expression n 0*)
+	| ENUM (id, items) -> true 
+	| UNION (id, flds) ->  true
+	| STRUCT (id, flds) -> true
+	| VOLATILE typ -> unionOrEnumType typ  
+	| TYPE_LINE (_, _, _type) -> unionOrEnumType _type  
+	|_->false
+)	
+
+let rec getAalreadyDif_type typ =
+	(match typ with
+	| BITFIELD (t, n) ->    getAalreadyDif_type t || getAlreaddyauux n 
+	| PROTO (typ, _, _) ->  getAalreadyDif_type typ  
+	| OLD_PROTO (typ, _, _) -> getAalreadyDif_type typ  
+	| PTR typ ->  getAalreadyDif_type typ  
+	| RESTRICT_PTR typ ->  getAalreadyDif_type typ  
+	| ARRAY (typ, _) ->  getAalreadyDif_type typ  
+	| CONST typ ->  getAalreadyDif_type typ  
+	| VOLATILE typ ->  getAalreadyDif_type typ  
+	| GNU_TYPE (attrs, typ) ->   getAalreadyDif_type typ  
+	| TYPE_LINE (file, num, _type) ->    
+	 
+	    let mem  =  List.mem  file !includeFile_table in
+	    let top =  if !current_includeFile = []  then "" else List.hd !current_includeFile in	
+	 
+		let res = if (  mem) then    ((*Printf.printf "  file %s already \n " top ; *) true ) else  ( 	  getAalreadyDif_type _type  ) in
+		
+		if (top= file) = false  then  
+		(  if(   List.mem file !current_includeFile  ) then 
+			 ((*je dépile jsqu'à file le fichier est terminé ainsi que tous ceux aui sont empilé jusqu'à file*)
+		      (* Printf.printf "TYPE LINE  file %s   top %s  \nPILE\t" file top;
+		        List.iter (fun name->  Printf.printf "%s\t" name	  )   !current_includeFile; 
+		        Printf.printf "TYPE FIN" ;*)
+				while ( !current_includeFile != [] && (List.hd !current_includeFile = file) = false ) do
+					let current = List.hd !current_includeFile in
+					current_includeFile := List.tl !current_includeFile ;
+					if(   List.mem current !includeFile_table = false ) then 
+					( 
+					(*	Printf.printf "TYPE LINE  file %s add \n " current ;*)
+						includeFile_table := current::!includeFile_table 
+					)
+				done
+		    )
+		    else (*j'empile nouveau début de fichier*) 
+		    ((*Printf.printf "TYPE LINE  file new %s \n " file ;*)current_includeFile:= file::!current_includeFile)
+		  );
+		res
+	  
+	 | _->   false
+	)
+	
+ 
+	
+and    getAlreaddyauux exp = 
+		match exp with
+		| UNARY (op, exp') -> getAlreaddyauux exp' 
+		| BINARY (_, exp1, exp2) ->			getAlreaddyauux exp1  || getAlreaddyauux exp2  
+		| QUESTION (exp1, exp2, exp3) ->	getAlreaddyauux exp1  || getAlreaddyauux exp2   || getAlreaddyauux exp3
+		| CAST (typ, exp) -> 		getAalreadyDif_type typ||getAlreaddyauux exp  
+		| CALL (exp, args) ->			getAlreaddyauux exp 
+		| COMMA exps -> getcomma exps
+		| EXPR_SIZEOF exp -> 	getAlreaddyauux exp 
+		| TYPE_SIZEOF typ ->	  getAalreadyDif_type typ 
+		| INDEX (exp, idx) ->		getAlreaddyauux exp || 		getAlreaddyauux idx  
+		| MEMBEROF (exp, fld) ->			getAlreaddyauux exp  
+		| MEMBEROFPTR (exp, fld) ->			getAlreaddyauux exp  
+		| GNU_BODY (decs, stat) ->	 getAlreaddyauuxS (BLOCK (decs, stat));
+		| EXPR_LINE(expr, file, num) -> 
+		
+		  let mem  =  List.mem  file !includeFile_table in
+		  let top = if !current_includeFile = []  then "" else List.hd !current_includeFile in	
+		  let res = if(   mem) then 	((*Printf.printf "  file %s already \n " top ;*)  true ) else  getAlreaddyauux expr in
+		  
+		  if (top= file) = false then  
+		  (    if(   List.mem file !current_includeFile  ) then 
+			((*je dépile jsqu'à file le fichier est terminé ainsi que tous ceux aui sont empilé jusqu'à file*)
+		  (*      Printf.printf "EXPR LINE  file %s  top %s  \nPILE\t" file top;
+		        List.iter (fun name->  Printf.printf "%s\t" name	  )   !current_includeFile; 
+		        Printf.printf "\nEXPR FIN\n" ;*)
+				while (!current_includeFile != []  &&  (List.hd !current_includeFile = file)= false ) do
+				
+					let current = List.hd !current_includeFile in	
+					current_includeFile := List.tl !current_includeFile ;
+					if(   List.mem current !includeFile_table = false ) then 
+					(
+						(*Printf.printf "EXP LINE  file %s add \n " current ;*)includeFile_table := current::!includeFile_table;
+					)
+				done
+		    )
+		    else (*j'empile nouveau début de fichier*) 
+		    ((*Printf.printf "EXPR LINE  file new %s \n " file ;*)current_includeFile:= file::!current_includeFile)
+		  );
+		  res
+		 |_-> false
+		 
+		 
+
+
+	
+			 
+	and getcomma exprs =
+	match exprs with
+	| e :: t -> if getAlreaddyauux e
+					then true
+					else getcomma t
+	| [] -> false
+	and getdeclist dec =
+	match dec with
+	| e :: t -> if getdec e
+					then true
+					else getdeclist t
+	| [] -> false
+	and getdec def =
+			(match def with
+				 FUNDEF (proto,   body) ->
+					let (decs, stat) = body in
+					getSingleName proto || getAlreaddyauuxS (BLOCK (decs, stat))  
+				| OLDFUNDEF (proto, decs, body) ->
+					let (d, stat) = body in
+					 getSingleName proto || getNameGroupList decs ||  getAlreaddyauuxS (BLOCK (d, stat))
+				| DECDEF names ->  getNameGroup names  
+				| TYPEDEF (names, _) ->(*Printf.printf "TYPEDEF  \n " ; Cprint.print_name_group names;*)getNameGroup names  	 
+				| ONLYTYPEDEF names -> (*Printf.printf "ONLYTYPEDEF  \n " ; Cprint.print_name_group names; *) getNameGroup names  
+			)
+	 
+ 
+and getAlreaddyauuxS stat =
+	match stat with
+	| COMPUTATION exp -> 		getAlreaddyauux exp  
+	| BLOCK (defs, stat) -> 		getdeclist defs ||  getAlreaddyauuxS stat  
+	| SEQUENCE (s1, s2) -> getAlreaddyauuxS s1 ||  getAlreaddyauuxS s2 
+	| IF (exp, s1, s2) -> 	getAlreaddyauux exp ||  getAlreaddyauuxS s1 ||  getAlreaddyauuxS s2 
+	| WHILE (exp, stat) ->  getAlreaddyauux exp ||  getAlreaddyauuxS stat
+	| DOWHILE (exp, stat) -> getAlreaddyauux exp ||  getAlreaddyauuxS stat
+	| FOR (exp1, exp2, exp3, stat) -> 	getAlreaddyauux exp1 ||  getAlreaddyauux exp2 ||  getAlreaddyauux exp3 ||  getAlreaddyauuxS stat
+	| RETURN exp -> 	getAlreaddyauux exp  
+	| SWITCH (exp, stat) -> getAlreaddyauux exp ||  getAlreaddyauuxS stat
+	| CASE (exp, stat) -> getAlreaddyauux exp ||  getAlreaddyauuxS stat
+	| DEFAULT stat -> getAlreaddyauuxS stat
+	| LABEL (_, stat) -> 	getAlreaddyauuxS stat 
+	| STAT_LINE (stat, file, _) ->
+		let mem  =  List.mem  file !includeFile_table in
+		let top = if !current_includeFile = []  then "" else List.hd !current_includeFile in	
+		let res = if(  mem ) then   ((*Printf.printf "  file %s already \n " top ;*)  true ) else (  getAlreaddyauuxS stat  ) in
+		if (top= file) = false  then  (*new file*)
+		  (    
+		    if List.mem file !current_includeFile then 
+		    ((*je dépile jsqu'à file le fichier est terminé ainsi que tous ceux aui sont empilé jusqu'à file*)
+		        (*Printf.printf "STAT LINE  file %s top %s  \n PILE\t" file top;
+		        List.iter (fun name->  Printf.printf "%s\t" name	  )   !current_includeFile; 
+		        Printf.printf "\nSTAT FIN\n" ;*)
+				while (!current_includeFile != []  &&  (List.hd !current_includeFile = file) =false ) do
+					let current =   List.hd !current_includeFile in	
+					
+					current_includeFile := List.tl !current_includeFile ;
+					if(   List.mem current !includeFile_table = false ) then 
+					(  (* Printf.printf "STAT LINE  file %s add \n " current ;*)
+						includeFile_table := current::!includeFile_table;
+					)
+				done
+		    )
+		    else (*j'empile nouveau début de fichier*) 
+		    ((*Printf.printf "STAT LINE  file new %s \n " file ;*)current_includeFile:= file::!current_includeFile)
+			
+		  );
+		  
+		 res
+	| GNU_ASM (_, output, input, _) -> gnu_asm output ||  gnu_asm input 
+	| GNU_ASM_VOLATILE (_, output, input, _) -> gnu_asm output ||  gnu_asm input 
+	| _ ->false
+ 			
+ 	and gnu_asm listasm =
+ 	match listasm with
+	| (id, desc, exp) :: t -> getAlreaddyauux exp || gnu_asm t
+	| [] -> false
+			
+	(* is already define single_name MDM *)
+	and getSingleName   (typ, sto, names) = 
+	 
+	let _ = getAalreadyDif_type typ in
+	isStatic sto = false && (getName names) 
+	
+and getName ((id, typ, attr, exp) : name) =   
+   let aux = getAalreadyDif_type typ in
+	let res =  if exp <> NOTHING then 
+		  getAlreaddyauux exp 
+	else
+	  aux    in
+	(*if res then Printf.printf "getName %s \n " id ;*) 
+	res
+		
+and getNameList nameList =
+	match nameList with
+	| e :: t ->   getName e|| getNameList t
+	| [] -> false
+ 
+	(* is already define name_group MDM *)
+and getNameGroup (typ, sto, names)  = 
+    let isUouE = getAalreadyDif_type typ in
+	isStatic sto = false && (   getNameList names || (unionOrEnumType typ && isUouE ))
+	
+	(* is already define name_group MDM *)
+and getNameGroupList namelist  = 
+	match namelist with
+	| (typ, sto, names) :: t ->   getAalreadyDif_type typ || getNameList names || getNameGroupList t
+	| [] -> false
+
+
+
+
+(* remove already define but not static*)
+
+let remove_multiple_include file =
+	 
+	  
+	 let res =  List.filter (fun def -> if  getdec def then (  false) else true )file in
+	 while ( !current_includeFile != []   ) do
+					let current = List.hd !current_includeFile in
+					current_includeFile := List.tl !current_includeFile ;
+					if(   List.mem current !includeFile_table = false ) then 
+					( 
+						 
+						includeFile_table := current::!includeFile_table 
+					)
+				done;
+	 res
+	
+
 	(* is a declaration type a function declaration type  *)
 	let rec isProto typ =
+	 
 		 match typ with
 		 
 						  PROTO (_, _, _) | OLD_PROTO (_, _, _) ->	true
@@ -45,6 +292,7 @@ open Cabs
 	@return the checked file.
 *)
 let rec file_checker = fun predicate corrector file ->
+
 	match file with
 		| elt :: file_tail -> if (predicate elt)
 			then (corrector elt) :: (file_checker predicate corrector file_tail)
@@ -61,7 +309,9 @@ let rec file_checker = fun predicate corrector file ->
 	@param file_list the C source file to check.
 	@return the checked file.
 *)
-let rec file_list_checker = fun predicate corrector file_list ->
+let rec file_list_checker =
+(*Printf.printf "file_list_checker\n";*)
+ fun predicate corrector file_list ->
 	List.map (file_checker predicate corrector) file_list
 
 (** Transform definitions in a single C source file.
@@ -83,7 +333,9 @@ let file_transform = fun f start file ->
 	@param file_list the list of C source file to be transformed.
 	@return the list of transformed C source file.
 *)
-let file_list_transform = fun f start file_list ->
+let file_list_transform = 
+(*Printf.printf "file_list_transform";*)
+fun f start file_list ->
 	(List.fold_left (file_transform f) start file_list)
 
 (** Utility function to add a name in a name table.
@@ -93,19 +345,32 @@ let file_list_transform = fun f start file_list ->
 	@param name the name to add in the table.
 	@return the modified name table.
 *)
-let rec add_name = fun name_table name ->
-	match name_table with
-		| (oth_name, count) :: t -> if name = oth_name
-			then (name, count + 1) :: t
-			else (oth_name, count) :: (add_name t name)
-		| [] -> (name, 1) :: []
+ let rec add_name =
+ (*Printf.printf "\nadd_name\n" ;*)
+ 
+  fun name_table name ->
+	if name ="" then name_table else
+			match name_table with
+				| (oth_name, count) :: t -> if name = oth_name
+					then (name, count + 1) :: t
+					else (oth_name, count) :: (add_name t name)
+				| [] ->  (name, 1) :: [] (* MDM change f name ="" then name_table else *)
+				
+				
+				
+ 
+ 
+ 
 
 
 (** Utility function to get the list of multiple names in a name table.
 	@param name_table the name table to get the names.
 	@return the list of names that have a > 1 count in the name table.
 *)
-let keep_multiple = fun name_table ->
+let keep_multiple = 
+(*Printf.printf "keep_multiple\n";*)
+
+fun name_table ->
 	(List.fold_left
 		(fun mult_list entry ->
 			let (name, count) = entry
@@ -119,7 +384,10 @@ let keep_multiple = fun name_table ->
 	@param name the name to look for.
 	@return if the name is in the table.
 *)
-let rec is_name_in_table = fun name_table name ->
+let rec is_name_in_table =
+(*Printf.printf "is_name_in_table\n";*)
+
+ fun name_table name ->
 	match name_table with
 		| (a_name, _) :: t -> (a_name = name) || (is_name_in_table t name)
 		| [] -> false
@@ -131,7 +399,10 @@ let rec is_name_in_table = fun name_table name ->
 	@param cabsnames the Cabs.name list to look en
 	@return if name is in the list
 *)
-let rec name_is_in = fun name cabsnames ->
+let rec name_is_in = 
+(* Printf.printf "name_is_in\n" ;*)
+fun name cabsnames ->
+
 	match cabsnames with
 		| (name0, _, _, _) :: t ->
 			if name0 = name
@@ -144,7 +415,9 @@ let rec name_is_in = fun name cabsnames ->
 	@param cabsnames the Cabs.name list to look in
 	@return if name is the only one in the list
 *)
-let name_is_lonely = fun name cabsnames ->
+let name_is_lonely = 
+ (*Printf.printf "name_is_lonely\n" ;*)
+ fun name cabsnames ->
 	match cabsnames with
 		| (name0, _, _, _) :: [] -> (name = name0)
 		| _ -> false
@@ -154,14 +427,18 @@ let name_is_lonely = fun name cabsnames ->
 	@param cabsnames the Cabs.name list where the name must be removed
 	@return the Cabs.name list without the name
 *)
-let name_remove = fun name cabsnames ->
+let name_remove = 
+ (*Printf.printf "name_remove\n" ;*)
+ fun name cabsnames ->
 	List.filter (function (name2, _, _, _) -> name <> name2) cabsnames
 
 (** Get the list of string names for a Cabs.name list
 	@param cabsnames the Cabs.name list
 	@return the list of names as a string list
 *)
-let strings_of_cabsnames = fun cabsnames ->
+let strings_of_cabsnames = 
+ (*Printf.printf "strings_of_cabsnames\n" ;*)
+ fun cabsnames ->
 	List.map (function (name, _, _, _) -> name) cabsnames
 
 (** Fold_left on a Cabs.name list
@@ -170,7 +447,9 @@ let strings_of_cabsnames = fun cabsnames ->
 	@param cabsnames the Cabs.name list to iterate on
 	@return the resulting 'a element
 *)
-let name_fold_left = fun f first cabsnames ->
+let name_fold_left =
+ (*Printf.printf "name_fold_left\n" ;*)
+  fun f first cabsnames ->
 	List.fold_left f first (strings_of_cabsnames cabsnames)
 
 (** Get the Cabs.name element of a name in a Cabs.name list
@@ -178,7 +457,9 @@ let name_fold_left = fun f first cabsnames ->
 	@param cabsnames the Cabs.name list to search in
 	@return the corresponding Cabs.name
 *)
-let rec get_cabsname_of_name = fun name cabsnames ->
+let rec get_cabsname_of_name = 
+(* Printf.printf "get_cabsname_of_name\n" ;*)
+fun name cabsnames ->
 	match cabsnames with
 		| cname :: t ->
 			let (name0, _, _, _) = cname
@@ -186,6 +467,8 @@ let rec get_cabsname_of_name = fun name cabsnames ->
 				then cname
 				else get_cabsname_of_name name t
 		| [] -> failwith("Name not found")
+		
+
 
 (** Type to manage various kind of C elements. *)
 type elt =
@@ -204,8 +487,9 @@ type elt =
 	@param rn_name function that is applied on all names.
 	@return the resulting element.
 *)
-let rec generic_rename = fun element rn_name ->
-
+let rec generic_rename = 
+ (*Printf.printf "generic_rename\n" ;*)
+fun element rn_name ->
 	(* recursive calls to generic rename, with type convertion *)
 	let generic_rn_def = fun deflist ->
 		match generic_rename (E_DEF(deflist)) rn_name with
@@ -235,10 +519,10 @@ let rec generic_rename = fun element rn_name ->
 	(* renaming in a constant *)
 	let rn_constant = fun constant ->
 		match constant with
-			| CONST_INT(name) -> CONST_INT(rn_name name)
-			| CONST_FLOAT(name) -> CONST_FLOAT(rn_name name)
-			| CONST_CHAR(name) -> CONST_CHAR(rn_name name)
-			| CONST_STRING(name) -> CONST_STRING(rn_name name)
+			| CONST_INT(name) -> CONST_INT((*rn_name MDM change*) name)
+			| CONST_FLOAT(name) -> CONST_FLOAT((*rn_name MDM change*) name)
+			| CONST_CHAR(name) -> CONST_CHAR((*rn_name MDM change*) name)
+			| CONST_STRING(name) -> CONST_STRING((*rn_name MDM change*) name)
 			| CONST_COMPOUND(expr_list) ->
 				CONST_COMPOUND(List.map generic_rn_expr expr_list)
 			| RCONST_FLOAT f -> RCONST_FLOAT f
@@ -275,8 +559,8 @@ let rec generic_rename = fun element rn_name ->
 				MEMBEROFPTR((rn_expr m_expr), (rn_name name))
 			| GNU_BODY(body) ->
 				GNU_BODY(generic_rn_body body)
-			| EXPR_LINE(exprl, str, num) ->
-				EXPR_LINE((rn_expr exprl), str, num)
+			| EXPR_LINE(exprl, file, num) ->
+				 EXPR_LINE((rn_expr exprl), file, num)
 			| other -> other in
 
 	(* renaming in a proto *)
@@ -313,7 +597,9 @@ let rec generic_rename = fun element rn_name ->
 		List.map rn_gnu_attr gnu_attrs in
 
 	(* renaming in a base type *)
-	let rec rn_base_type = fun base_type ->
+	let rec rn_base_type = 
+	 (*Printf.printf "rn_base_type\n";*)
+	 fun base_type ->
 		match base_type with
 			PTR(ptr_base_type) ->
 				PTR(rn_base_type ptr_base_type)
@@ -348,7 +634,9 @@ let rec generic_rename = fun element rn_name ->
 					(rn_gnu_attrs gnu_attrs),
 					(rn_base_type g_base_type)
 				)
-			| other -> other in
+			| TYPE_LINE (file, num, _type) ->(* Printf.printf "rn_base_type %s\n" file; *)
+						TYPE_LINE (file, num,rn_base_type _type)
+			| other ->  other in
 
 	(* renaming a cabs_name (type name in Cabs) *)
 	let rn_cabs_name = fun cabs_name ->
@@ -401,8 +689,8 @@ let rec generic_rename = fun element rn_name ->
 				DEFAULT(rn_statement stat)
 			| LABEL(str, stat) ->
 				LABEL(str, (rn_statement stat))
-			| STAT_LINE(stat, str, num) ->
-				STAT_LINE((rn_statement stat), str, num)
+			| STAT_LINE(stat, file, num) ->
+				STAT_LINE((rn_statement stat), file, num)
 			| other -> other in
 
 	(* renaming in a body *)
@@ -414,25 +702,38 @@ let rec generic_rename = fun element rn_name ->
 	let rec rn_def_list = fun def_list ->
 		match def_list with
 			FUNDEF(single_name,body) :: t ->
+			let isAlready = getSingleName single_name in 
+			if isAlready then (rn_def_list t)
+			else
 				FUNDEF(
 					(rn_single_name single_name),
 					(rn_body body)
 				)::(rn_def_list t)
 			| OLDFUNDEF(single_name,name_group_list,body) :: t ->
+			let isAlready = getSingleName single_name in
+			if isAlready then (rn_def_list t)
+			else
 				OLDFUNDEF(
 					(rn_single_name single_name),
 					(List.map rn_name_group name_group_list),
 					(rn_body body)
 				) :: (rn_def_list t)
 			| DECDEF(name_group) :: t ->
-					DECDEF(rn_name_group name_group) :: (rn_def_list t)
+			let isAlready = getNameGroup name_group in
+			if isAlready then (rn_def_list t)
+			else DECDEF(rn_name_group name_group) :: (rn_def_list t)
 			| TYPEDEF(name_group,gnu_attrs) :: t ->
-				TYPEDEF(
+			let isAlready = getNameGroup name_group in
+			if isAlready then (rn_def_list t)
+			else	TYPEDEF(
 					(rn_name_group name_group),
 					(rn_gnu_attrs gnu_attrs)
 				) :: (rn_def_list t)
 			| ONLYTYPEDEF(name_group) :: t ->
-				ONLYTYPEDEF(rn_name_group name_group) :: (rn_def_list t)
+			let isAlready = getNameGroup name_group in
+			if isAlready then (rn_def_list t)
+			else	ONLYTYPEDEF(rn_name_group name_group) :: (rn_def_list t)
+				
 			| [] -> []
 
 	(* dispatch generic elements -- generic_remane *)
@@ -470,10 +771,9 @@ let rename = fun old_name new_name tree ->
 	@param file_list the list of C files.
 	@return the name table of all globals and all extern in the list of files.
 *)
-let globals_tables = fun file_list ->
-	let counter = fun tables def ->
-		let (globtbl, exttbl) = tables
-		in match def with
+let globals_tables   = fun file_list ->
+	let counter = fun  _  def ->
+		 match def with
 			| DECDEF(base_type, storage, cabs_names) ->
 				(* exclude function pointers *)
 				(let has_fun_ptr = (List.fold_left
@@ -482,31 +782,34 @@ let globals_tables = fun file_list ->
 						let (_, btype, _, _) = cabs_name
 						in match btype with
 							| PTR(PROTO(_)) | PTR(OLD_PROTO(_)) -> true
-							| _ -> false
-						)
+							| _ -> false )
 					) false cabs_names)
-				in if has_fun_ptr then (globtbl, exttbl)
+				in if has_fun_ptr then (!global_table,!extern_table )
 				else let names = strings_of_cabsnames cabs_names
 				in match base_type with
-					| PROTO(_) | OLD_PROTO(_) -> (globtbl, exttbl)
+					| PROTO(_) | OLD_PROTO(_) -> (!global_table,!extern_table )
 					| _ -> 
-						
-	
-						 
-							(*if storage = EXTERN	then		List.iter (fun (name, pt , _,_)-> 
- 								if isProto pt  then
-																	Printf.eprintf "\ndéclaration de fonction externe 1 %s \n" name
-												  )  cabs_names;*)
-
 							if storage = EXTERN
-							then (globtbl, (List.fold_left add_name exttbl  names))
+							then 
+							begin	 	  				  
+								List.iter (fun name-> extern_table:=add_name !extern_table  name	  )  names; 
+							(!global_table,!extern_table )
+							end
 							else if storage <> STATIC
-							then ((List.fold_left add_name globtbl names), exttbl)
-							else (globtbl, exttbl)
+							then  (	global_table:= (List.fold_left add_name !global_table names); 
+										
+								(!global_table, !extern_table)
+							)
+							else (!global_table,!extern_table )
 						 
 				)
-			| _ -> (globtbl, exttbl)
-	in file_list_transform counter ([], []) file_list
+			| _ -> (!global_table,!extern_table )
+	in 
+	file_list_transform counter ([],[])  file_list
+	
+	
+	
+ 
 
 (** Find the list of conflicting globals and to-be-simplified-externs
 	@param globtbl table name of globals variables.
@@ -599,8 +902,9 @@ let check_typedef = fun typedef file_tail list_tail ->
 	)
 	in (TYPEDEF(name_group, gnu_attrs), file_tail_chk, list_tail_chk)
 
-let extern_table = ref []
-let global_table = ref []
+ 
+
+
 (** Replace the first extern declarations of a variable by its definition, and
 	remove other declarations, and also remove multiples definition of globals
 	variable.
@@ -753,8 +1057,10 @@ let typedef_table = fun file_list ->
 		match def with
 			| TYPEDEF((_, _, cabs_names), _) ->
 				let names = List.map (function (n, _, _, _) -> n) cabs_names
-				in List.fold_left add_name typetbl names
-			| _ -> typetbl
+				in List.iter (fun name-> typedef_table:=add_name  !typedef_table  name	  ) names;
+				
+				 !typedef_table
+			| _ -> !typedef_table
 	in file_list_transform counter [] file_list
 
 (** Find the name table of static declarations.
@@ -766,13 +1072,17 @@ let static_fun_table = fun file_list ->
 		match def with
 			| FUNDEF((_, STATIC, cabs_name), _) ->
 				let (name, _, _, _) = cabs_name
-				in add_name statictbl name
+				in static_func_table := add_name !static_func_table name;
+				!static_func_table
 			| OLDFUNDEF((_, STATIC, cabs_name), _, _) ->
 				let (name, _, _, _) = cabs_name
-				in add_name statictbl name
+				in static_func_table := add_name !static_func_table name;
+				!static_func_table
 			| DECDEF(_, STATIC, cabs_names) ->
-				name_fold_left add_name statictbl cabs_names
-			| _ -> statictbl
+				let names = List.map (function (n, _, _, _) -> n) cabs_names
+				in List.iter (fun name-> static_func_table:=add_name  !static_func_table  name	  )  names; 
+				 !static_func_table
+			| _ -> !static_func_table
 	in file_list_transform counter [] file_list
 
 (** Find the name table of struct/enum/union declarations.
@@ -780,20 +1090,23 @@ let static_fun_table = fun file_list ->
 	@return the name table of all struct/enum/union declarations in the list of
 			files.
 *)
+ 
 let onlytypedef_table = fun file_list ->
 	let counter = fun onlytable def ->
 		match def with
 			| ONLYTYPEDEF(base_type, _, _) ->
 				(match base_type with
 					| STRUCT("",_) | STRUCT(_,[]) | UNION("",_) | UNION(_,[]) ->
-						onlytable
+						!onlytypedef_table
 					| STRUCT(name, _) | UNION(name, _) ->
-						add_name onlytable name
-					| ENUM("", _) | ENUM(_, []) -> onlytable
-					| ENUM(name, _) -> add_name onlytable name
-					| _ -> onlytable
+						onlytypedef_table:=add_name !onlytypedef_table name; !onlytypedef_table
+					| ENUM("", _) | ENUM(_, []) -> !onlytypedef_table
+					| ENUM(name, _) -> onlytypedef_table:=add_name !onlytypedef_table name;
+					!onlytypedef_table
+					(*| TYPE_LINE (file, num, _type) ->  onlytable*)
+					| _ -> !onlytypedef_table
 				)
-			| _ -> onlytable
+			| _ -> !onlytypedef_table
 	in file_list_transform counter [] file_list
 
 (** Step 2: functions to rename conflicting declarations: *)
@@ -838,19 +1151,47 @@ let resolve_conflicts = fun prefix existing_table file_list conf_name ->
 
 	This is the main entry point of Mergec.
 *)
+
+let rec printList l =
+	match l with
+	 (s,n)::r -> Printf.printf "\t  %s \n " s; printList l
+	 | [] ->()
+	 
+		
 let check = fun prefix file_list ->
+
 	(* step -1: get the list of globals variables and external variables *)
-	let (glob, ext) = (globals_tables file_list)
-	in let confglob_tbl, extern_tbl = (conflicts_glob_extern_tables (glob, ext))
-	in let _ = extern_table := extern_tbl
-	in let _ = global_table := confglob_tbl
+	let (glob, ext) = (globals_tables  file_list)
+	in 
+				 
+	let _, _ = (conflicts_glob_extern_tables (glob, ext))
+		
+	in 
+
+	 
+	
+	(*Printf.printf "Extern  After \n " ;
+				 printList extern_tbl ;
+				 Printf.printf "end Extern  \n " ;*)
+				 
+	 (*Printf.printf "nb externe %d \n" (List.length !extern_table);
+	 Printf.printf "nb globale %d \n" (List.length !global_table);	*)
+				 
+				 
+ 
 	(* step 0: remove redundants typedefs and external *)
-	in let file_list0 = check_step0 file_list
+	
+	 let file_list0 = check_step0 file_list
 	(* step 1: get the list of conflictings typedefs,static,enum,struct,union *)
 	in let typedef_tbl = typedef_table file_list0
 	in let static_fun_tbl = static_fun_table file_list0
 	in let only_tbl = onlytypedef_table file_list0
-	in let existing_names = typedef_tbl @ static_fun_tbl @ only_tbl
+	in 
+	 (* Printf.printf "nb type def %d \n" (List.length typedef_tbl); 
+	 Printf.printf "nb static functions %d \n" (List.length static_fun_tbl);	
+	  Printf.printf "nb only type des %d \n" (List.length only_tbl);	*)
+	
+	let existing_names = typedef_tbl @ static_fun_tbl @ only_tbl
 	in let conf_names = ((keep_multiple typedef_tbl) @
 						(keep_multiple static_fun_tbl) @
 						(keep_multiple only_tbl))
