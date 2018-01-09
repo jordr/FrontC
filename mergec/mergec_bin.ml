@@ -66,9 +66,34 @@ let _ =
 		match Frontc.parse opts with
 		  PARSING_ERROR ->  []
 		| PARSING_OK file -> file in
+		
+		
 	
-	(* Merge multiple inputs *)
-	let process = fun args files ->
+	
+	(* Process the input *)
+	let process opts =
+		match Frontc.parse opts with
+		  PARSING_ERROR ->  exit 1
+		| PARSING_OK file -> Printf.printf "Merge    \n "  ;
+			let nf = Mergec.remove_multiple_include file in
+			 Printf.printf "Merge end    \n "  ;
+			Cprint.print output  
+			(	Mergec.merge (Mergec.check 	!prefix   
+				(	
+					( [ nf] ) 
+				)
+			)
+			)
+		 in
+
+	 
+ 
+			
+	
+	(* Merge multiple inputs old*)
+	(*let process =
+
+	 fun args files -> 
 		(Mergec.merge
 			(Mergec.check
 				!prefix 
@@ -80,12 +105,19 @@ let _ =
 				)
 			) 
 		) in
-	
+	 *)
 	(* Process the inputs *)
 	let _ =
+			 
 		if !from_stdin || !files = []
 		then Cprint.print output (parse !args)
-		else Cprint.print output (process !args !files)  in
+		else 
+			
+		List.iter (fun file ->  
+				process ((FROM_FILE file)::!args)) !files in
+				
+				
+				
 	
 	(* Close the output if needed *)
 	if close then close_out output

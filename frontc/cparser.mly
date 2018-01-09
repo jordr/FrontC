@@ -143,7 +143,36 @@ let list_expression expr =
 		| NOTHING -> []
 		| _ -> [expr]
 
+(** Build an embedded line/source reference.
+	@param file		Source file.
+	@param line		Source line.
+	@param stat		Statement matching the source file/line pair. *)
+let set_line (file, line) stat =
+	if Clexer.linerec !Clexer.current_handle
+	then Cabs.STAT_LINE (stat, file, line)
+	else stat
 
+
+(** Build an embedded line/source reference.
+	@param file		Source file.
+	@param line		Source line.
+	@param expr		Expression matching the source file/line pair. *)
+let set_eline (file, line) expr =
+	if Clexer.linerec !Clexer.current_handle
+	then Cabs.EXPR_LINE (expr, file, line)
+	else expr
+
+
+(** Build an embedded line/source reference.
+	@param file		Source file.
+	@param line		Source line.
+	@param _type	Type matching the source file/line pair. *)
+let set_tline _type =
+	if Clexer.linerec !Clexer.current_handle
+	then Cabs.TYPE_LINE (Clexer.curfile (), Clexer.curline(), _type)
+	else _type
+	
+	
 (** Set the base type of a name tuple.
 	@param typ		Base type to set.
 	@param id		Identifier.
@@ -164,7 +193,10 @@ let set_name_group (typ, sto) (lst : name list)
 : name_group =
 	(typ, sto, List.map (set_name typ) lst)
 
-
+let set_name_groupG (typ, sto) (lst : name list)
+: name_group =
+	( set_tline typ, sto, List.map (set_name typ) lst)
+	
 (** Set the type and storage on a single name group.
 	@param typ	Type to set.
 	@param sto	Storage to set.
@@ -196,34 +228,8 @@ let apply_qual ((t1, q1) : base_type * modifier list)
 		if t2 = NO_TYPE then t1 else  raise BadModifier),
 	List.append q1 q2)
 
-(** Build an embedded line/source reference.
-	@param file		Source file.
-	@param line		Source line.
-	@param stat		Statement matching the source file/line pair. *)
-let set_line (file, line) stat =
-	if Clexer.linerec !Clexer.current_handle
-	then Cabs.STAT_LINE (stat, file, line)
-	else stat
 
 
-(** Build an embedded line/source reference.
-	@param file		Source file.
-	@param line		Source line.
-	@param expr		Expression matching the source file/line pair. *)
-let set_eline (file, line) expr =
-	if Clexer.linerec !Clexer.current_handle
-	then Cabs.EXPR_LINE (expr, file, line)
-	else expr
-
-
-(** Build an embedded line/source reference.
-	@param file		Source file.
-	@param line		Source line.
-	@param _type	Type matching the source file/line pair. *)
-let set_tline _type =
-	if Clexer.linerec !Clexer.current_handle
-	then Cabs.TYPE_LINE (Clexer.curfile (), Clexer.curline(), _type)
-	else _type
 
 %}
 
@@ -338,7 +344,7 @@ globals:
 /*** Global Definition ***/
 global:
 		global_type global_defs SEMICOLON
-			{DECDEF (set_name_group $1 (List.rev $2))}
+			{DECDEF (set_name_groupG $1 (List.rev $2))}
 |		global_type global_proto body
 			{
 				let (_, base, _, _) = $2 in
@@ -353,13 +359,13 @@ global:
 |		global_type old_proto old_pardefs body
 			{ OLDFUNDEF (set_single $1 $2, List.rev $3, (snd $4)) }
 |		global_type SEMICOLON
-			{ONLYTYPEDEF (set_name_group $1 [])}
+			{ONLYTYPEDEF (set_name_groupG $1 [])}
 |		TYPEDEF typedef_type typedef_defs_opt SEMICOLON
 			{let _ = List.iter (fun (id, _, _, _) -> Clexer.add_type id) $3 in
-			TYPEDEF (set_name_group (fst $2, snd $2) $3, [])}
+			TYPEDEF (set_name_groupG (fst $2, snd $2) $3, [])}
 |		gcc_attribute TYPEDEF typedef_type typedef_defs SEMICOLON
 			{let _ = List.iter (fun (id, _, _, _) -> Clexer.add_type id) $4 in
-			TYPEDEF (set_name_group (fst $3, snd $3) $4, $1)}
+			TYPEDEF (set_name_groupG (fst $3, snd $3) $4, $1)}
 ;
 
 global_type:
@@ -645,25 +651,25 @@ typedef_def:
 ;
 typedef_dec:
 		IDENT
-			{($1, NO_TYPE)}
+			{($1, set_tline NO_TYPE)}
 |		STAR typedef_dec
-			{(fst $2, set_type (PTR NO_TYPE) (snd $2))}
+			{(fst $2, set_tline(set_type (PTR NO_TYPE) (snd $2)))}
 |		STAR RESTRICT typedef_dec
-			{(fst $3, set_type (RESTRICT_PTR NO_TYPE) (snd $3))}
+			{(fst $3, set_tline(set_type (RESTRICT_PTR NO_TYPE) (snd $3)))}
 |		STAR CONST typedef_dec
-			{(fst $3, set_type (CONST (PTR NO_TYPE)) (snd $3))}
+			{(fst $3, set_tline(set_type (CONST (PTR NO_TYPE)) (snd $3)))}
 |		STAR VOLATILE typedef_dec
-			{(fst $3, set_type (VOLATILE (PTR NO_TYPE)) (snd $3))}
+			{(fst $3, set_tline(set_type (VOLATILE (PTR NO_TYPE)) (snd $3)))}
 |		STAR gcc_attributes typedef_dec
-			{(fst $3, set_type (GNU_TYPE ($2, PTR NO_TYPE)) (snd $3))}
+			{(fst $3,set_tline( set_type (GNU_TYPE ($2, PTR NO_TYPE)) (snd $3)))}
 |		typedef_dec LBRACKET comma_expression RBRACKET
-			{(fst $1, set_type (ARRAY (NO_TYPE, smooth_expression $3)) (snd $1))}
+			{(fst $1, set_tline(set_type (ARRAY (NO_TYPE, smooth_expression $3)) (snd $1)))}
 |		typedef_dec LBRACKET RBRACKET
-			{(fst $1, set_type (ARRAY (NO_TYPE, NOTHING)) (snd $1))}
+			{(fst $1, set_tline(set_type (ARRAY (NO_TYPE, NOTHING)) (snd $1)))}
 |		typedef_dec LPAREN parameters RPAREN
 			{(fst $1, PROTO (snd $1, fst $3, snd $3))}
 |		LPAREN typedef_dec RPAREN LPAREN parameters RPAREN
-			{(fst $2, set_type (PROTO (NO_TYPE, fst $5, snd $5)) (snd $2))}
+			{(fst $2, set_tline(set_type (PROTO (NO_TYPE, fst $5, snd $5)) (snd $2)))}
 |		LPAREN typedef_dec RPAREN
 			{$2}
 ;
