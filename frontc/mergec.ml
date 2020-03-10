@@ -53,6 +53,13 @@ let rec unionOrEnumType typ =
 	|_->false
 )	
 
+let isIncludeFile file =
+	 let len = String.length file in
+ 	  
+	 if (String.sub file  (len-2) 1 )="h"  then true else  false
+
+
+
 let rec getAalreadyDif_type typ =
 	(match typ with
 	| BITFIELD (t, n) ->    getAalreadyDif_type t || getAlreaddyauux n 
@@ -66,14 +73,14 @@ let rec getAalreadyDif_type typ =
 	| GNU_TYPE (attrs, typ) ->   getAalreadyDif_type typ  
 	| TYPE_LINE (file, num, _type) ->    
 	 
-	    let mem  =  List.mem  file !includeFile_table in
+	    let mem  = if isIncludeFile file then  List.mem  file !includeFile_table else false in
 	    let top =  if !current_includeFile = []  then "" else List.hd !current_includeFile in	
 	 
 		let res = if (  mem) then    ((*Printf.printf "  file %s already \n " top ; *) true ) else  ( 	  getAalreadyDif_type _type  ) in
 		
 		if (top= file) = false  then  
 		(  if(   List.mem file !current_includeFile  ) then 
-			 ((*je dépile jsqu'à file le fichier est terminé ainsi que tous ceux aui sont empilé jusqu'à file*)
+			 ((*je dépile jsqu'à file le fichier ai terminé ainsi que tous ceux qui sont empilés jusqu'à file*)
 		      (* Printf.printf "TYPE LINE  file %s   top %s  \nPILE\t" file top;
 		        List.iter (fun name->  Printf.printf "%s\t" name	  )   !current_includeFile; 
 		        Printf.printf "TYPE FIN" ;*)
@@ -113,16 +120,16 @@ and    getAlreaddyauux exp =
 		| GNU_BODY (decs, stat) ->	 getAlreaddyauuxS (BLOCK (decs, stat));
 		| EXPR_LINE(expr, file, num) -> 
 		
-		  let mem  =  List.mem  file !includeFile_table in
+		  let mem  = if isIncludeFile file then  List.mem  file !includeFile_table else false in
+
 		  let top = if !current_includeFile = []  then "" else List.hd !current_includeFile in	
+		  
 		  let res = if(   mem) then 	((*Printf.printf "  file %s already \n " top ;*)  true ) else  getAlreaddyauux expr in
 		  
 		  if (top= file) = false then  
 		  (    if(   List.mem file !current_includeFile  ) then 
-			((*je dépile jsqu'à file le fichier est terminé ainsi que tous ceux aui sont empilé jusqu'à file*)
-		  (*      Printf.printf "EXPR LINE  file %s  top %s  \nPILE\t" file top;
-		        List.iter (fun name->  Printf.printf "%s\t" name	  )   !current_includeFile; 
-		        Printf.printf "\nEXPR FIN\n" ;*)
+			((*je dépile jsqu'à file le fichier ai terminé ainsi que tous ceux aui sont empilés jusqu'à file*)
+		  
 				while (!current_includeFile != []  &&  (List.hd !current_includeFile = file)= false ) do
 				
 					let current = List.hd !current_includeFile in	
@@ -185,13 +192,15 @@ and getAlreaddyauuxS stat =
 	| DEFAULT stat -> getAlreaddyauuxS stat
 	| LABEL (_, stat) -> 	getAlreaddyauuxS stat 
 	| STAT_LINE (stat, file, _) ->
-		let mem  =  List.mem  file !includeFile_table in
+	
+	    let mem  = if isIncludeFile file then  List.mem  file !includeFile_table else false in
+
 		let top = if !current_includeFile = []  then "" else List.hd !current_includeFile in	
 		let res = if(  mem ) then   ((*Printf.printf "  file %s already \n " top ;*)  true ) else (  getAlreaddyauuxS stat  ) in
 		if (top= file) = false  then  (*new file*)
 		  (    
 		    if List.mem file !current_includeFile then 
-		    ((*je dépile jsqu'à file le fichier est terminé ainsi que tous ceux aui sont empilé jusqu'à file*)
+		    ((*je dépile jsqu'à file le fichier ai terminé ainsi que tous ceux aui sont empilés jusqu'à file*)
 		        (*Printf.printf "STAT LINE  file %s top %s  \n PILE\t" file top;
 		        List.iter (fun name->  Printf.printf "%s\t" name	  )   !current_includeFile; 
 		        Printf.printf "\nSTAT FIN\n" ;*)

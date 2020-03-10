@@ -1,17 +1,17 @@
 (*
  *	FrontC Lexer
- *	Copyright (C) 1999  Université de Toulouse <casse@irit.fr>
+ *	Copyright (C) 1999  Universitï¿½ de Toulouse <casse@irit.fr>
  *
  *	This library is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU Lesser General Public
  *	License as published by the Free Software Foundation; either
  *	version 2.1 of the License, or (at your option) any later version.
- *	
+ *
  *	This library is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
  *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  *	Lesser General Public License for more details.
- *	
+ *
  *	You should have received a copy of the GNU Lesser General Public
  *	License along with this library; if not, write to the Free Software
  *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -20,7 +20,7 @@
 open Cparser
 exception Eof
 exception InternalError of string
-let version = "Clexer V1.0f 10.8.99 Hugues Cassé"
+let version = "Clexer V1.0f 10.8.99 Hugues Cassï¿½"
 
 
 (*
@@ -71,7 +71,7 @@ let has_gcc _ = (!current_handle).h_gcc
 let is_strict _ = (!current_handle).h_strict
 let pragma _ = (!current_handle).h_pragma
 
-let add_pragma p = 
+let add_pragma p =
 	(!current_handle).h_pragma <- (curfile (), curline (), p) :: (pragma ())
 
 (*
@@ -172,7 +172,7 @@ let keywords =
 		("union", id UNION);
 		("unsigned", id UNSIGNED);
 		("void", id VOID);
-		("volatile", id VOLATILE);		
+		("volatile", id VOLATILE);
 		("while", fun _ -> WHILE (curfile(), curline()));
 	]
 

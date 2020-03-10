@@ -1,6 +1,6 @@
 (*
 	FrontC -- representation of C sources.
-	Copyright (C) 2012 IRIT - université de Toulouse
+	Copyright (C) 2012 IRIT - universitï¿½ de Toulouse
 
 	This library is free software; you can redistribute it and/or
 	modify it under the terms of the GNU Lesser General Public
@@ -287,5 +287,3 @@ and gnu_attr =
 		(** support of __extension__ keyword *)
 	| GNU_INLINE
 		(** support of __inline keyword *)
-
-

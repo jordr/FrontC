@@ -4,21 +4,22 @@
 ** File: 			calipso_bin.ml
 ** Version:			3.0
 ** Date:			7.20.99
-** Author:			Hugues Cassé
+** Author:			Hugues Cassï¿½
 **
 *)
-
+open Printf
 exception ParsingError
 
 
 (* Useful Data *)
-let version = "Calipso V3.0 7.20.99 Hugues Cassé"
+let version = "Calipso V3.0 7.20.99 Hugues Cassï¿½"
 let help = version ^ "\n" ^ "calipso [-hmPtsVv] [-r[bcfgkrs]] [-s[lrw]] [-p preprocessor] <file list> [-o <output file>]"
 exception InternalError
 
 (* Output management *)
 let out = ref stdout
 let close_me = ref false
+let outpragma = ref stdout
 
 let close_output _ =
 	flush !out;
@@ -30,7 +31,13 @@ let set_output filename =
 	with (Sys_error msg) ->
 		output_string stderr ("Error while opening output: " ^ msg); exit 1);
 	close_me := true
-	
+
+
+	let set_pragma filename =
+		(try outpragma := open_out filename
+		with (Sys_error msg) ->
+			output_string stderr ("Error while opening output: " ^ msg); exit 1)
+
 
 (* File Management *)
 let files = ref []
@@ -45,6 +52,7 @@ let add_file filename =
 let calipso_options = ref []
 let preproc = ref ""
 let stat_display = ref false
+let save_pragma = ref false
 let args : Frontc.parsing_arg list ref = ref []
 
 let standard_remove _ =
@@ -98,6 +106,7 @@ let arg_def =
 	"-sw", Arg.Unit (fun _ -> calipso_options := Calipso.Strategy(Algo.WEIGHTED) :: !calipso_options),
 					"Organize sequences using the weight system";
 	"-l", Arg.Unit (fun _ -> args := (Frontc.LINE_RECORD true)::!args), "Preserve line numbers";
+	"-pragma", Arg.String (fun filename -> calipso_options := Calipso.SavePragma :: !calipso_options;set_pragma filename;save_pragma := true), "store pragma info into the file ";
 	"-rrec", Arg.Unit (fun _ -> calipso_options := Calipso.RemoveRecursive :: !calipso_options),
 					"Try to transform recursive function into for loops."
 
@@ -118,13 +127,13 @@ let preprocess inname outname =
 			^ (if (idx + 2) >= (String.length str)
 				then ""
 				else replace
-					(String.sub str (idx + 2) ((String.length str) - idx - 2))) 
+					(String.sub str (idx + 2) ((String.length str) - idx - 2)))
 		with Not_found -> str in
 	let com = replace !preproc in
 	let _ = if !verbose_mode
 		then prerr_string ("Executing \"" ^ com ^ "\"\n")
 		else () in
-	if (Sys.command com) = 0 
+	if (Sys.command com) = 0
 		then ()
 		else raise PreprocessingError
 
@@ -157,7 +166,12 @@ let display_stats _ =
 			("function containing labels = "
 			^ (string_of_int !Algo.label_func) ^ "\n")
 	end
-	
+
+	let rec printPragma pragmaHandelList outChannel =
+		match pragmaHandelList with
+		[]->()
+		| (f,l,p)::other -> fprintf outChannel "%s %d %s\n" f l p; printPragma other outChannel
+
 
 (* Starter *)
 let process filename =
@@ -187,9 +201,14 @@ let process filename =
 			Cprint.print
 				!out
 				(Calipso.process_remove defs (!calipso_options));
-			if !stat_display then display_stats ()
+			if !stat_display then display_stats ();
+			if !save_pragma  then
+			begin
+				 printPragma !Clexer.current_handle.h_pragma !outpragma;
+				close_out !outpragma
+			end
 		end
-	
+
 let rec process_files files =
 	match files with
 	[] -> ()

@@ -4,7 +4,7 @@
 ** File: 			calipso.ml
 ** Version:			3.0
 ** Date:			7.20.99
-** Author:			Hugues Cassé
+** Author:			Hugues Cassï¿½
 **
 *)
 
@@ -44,10 +44,13 @@ type option =
 			the right; Algo.WEIGHTED: use the weight) *)
 	| RemoveRecursive
 		(** Transform (if possible) recursive function into loops (iftofor). *)
+	| SavePragma
+		(** Save Pragma. *)
 
 let rm_goto = ref false
 let verbose_mode = ref false
 let rm_rec = ref false
+let save_pragma = ref false
 
 (* process_defs definition list -> definition list
 **		Remove "goto" and statement alike in the definition list.
@@ -82,9 +85,9 @@ let rec process_defs (defs : Cabs.definition list) =
 
 
 (** Process operations on an abstract C source file.
-	
+
 	This function provide the full set of options.
-	
+
 	@param defs the definition list to be processed.
 	@param options the option list.
 	@return the processed definition list.
@@ -123,6 +126,9 @@ let process_remove (defs : Cabs.definition list) options =
 			| RemoveRecursive :: t ->
 				let _ = rm_rec := true
 				in set_option t
+			| SavePragma :: t ->
+					let _ = save_pragma := true
+					in set_option t
 			| [] -> ()
 	in let _ = set_option options
 	in let defs = process_defs defs
@@ -147,4 +153,3 @@ let process_standard_remove (defs : Cabs.definition list) =
 let process_subtle_remove (defs : Cabs.definition list) =
 	process_remove defs [RemoveGoto; RemoveBreak; RemoveContinue; RemoveReturn;
 							RemoveSwitch(Reduce.KEEP); Strategy(Algo.LEFT)]
-
