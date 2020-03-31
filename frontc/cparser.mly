@@ -132,12 +132,12 @@ let set_type tst tin =
 	@param lst	List of expressions.
 	@return		Smoothed list.
 *)
-let smooth_expression lst =
+let smooth_expression lst = 
 	match lst with
 		| [] -> NOTHING
 		| [expr] -> expr
-		| _ -> COMMA (List.rev lst)
-let list_expression expr =
+		| _ ->  COMMA (List.rev lst)
+let list_expression expr = 
 	match expr with
 		COMMA lst -> lst
 		| NOTHING -> []
@@ -934,6 +934,7 @@ enum_name:	IDENT								{($1, NOTHING)}
 
 /*** Expressions ****/
 init_expression:
+
 		LBRACE init_comma_expression RBRACE
 			{CONSTANT (CONST_COMPOUND (List.rev $2))}
 |		expression
@@ -999,13 +1000,19 @@ expression:
 |		LPAREN body RPAREN
 			{Clexer.test_gcc(); set_eline $1 (GNU_BODY (snd $2))}
 |		LPAREN comma_expression RPAREN
-			{set_eline $1 (smooth_expression $2)}
+			{set_eline $1 (smooth_expression $2)}			
 |		LPAREN only_type RPAREN expression %prec CAST
-			{set_eline $1 (CAST ($2, $4))}
+			{ set_eline $1 (CAST ($2, $4))}
 |		expression LPAREN opt_expression RPAREN
-			{set_eline $2 (CALL ($1, list_expression $3))}
+			{ set_eline $2 (CALL ($1, list_expression $3))}
 |		expression LBRACKET comma_expression RBRACKET
 			{INDEX ($1, smooth_expression $3)}
+
+
+|		expression QUEST   comma_expression COLON expression  
+			{QUESTION ($1, smooth_expression (  $3), $5)}
+
+						
 |		expression QUEST expression COLON expression
 			{QUESTION ($1, $3, $5)}
 |		expression PLUS expression
@@ -1112,7 +1119,7 @@ stat_with_local:
 		statement
 			{ ($1, []) }
 |		statement locals
-			{ if Clexer.is_strict () then raise BadSyntax else ($1, $2) }
+			{ if Clexer.is_strict () then raise BadSyntax  else ($1, $2) }
 ;
 
 statement:
@@ -1120,6 +1127,7 @@ statement:
 			{set_line $1 NOP}
 |		comma_expression SEMICOLON
 			{set_line $2 (COMPUTATION (smooth_expression $1))}
+ 
 |		body
 			{set_line (fst $1) (BLOCK (snd $1))}
 |		IF LPAREN comma_expression RPAREN statement %prec IF

@@ -364,7 +364,7 @@ rule initial =
 	|		','				{COMMA(curfile(), curline())}
 	|		'.'				{DOT}
 	|		"sizeof"		{SIZEOF}
-	|		ident			{ scan_ident (Lexing.lexeme lexbuf)}
+	|		ident			{scan_ident (Lexing.lexeme lexbuf)}
 
 	|		eof				{EOF}
 	|		_				{display_error
