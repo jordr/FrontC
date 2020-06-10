@@ -29,12 +29,12 @@ let version = "Clexer V1.0f 10.8.99 Hugues Cass�"
 type handle = {
 	h_interactive: bool;
 	h_in_channel: in_channel;
-	mutable h_line: string;
-	mutable h_buffer: string;
+	mutable h_line: bytes;
+	mutable h_buffer: bytes;
 	mutable h_pos: int;
 	mutable h_lineno: int;
 	h_out_channel: out_channel;
-	mutable h_file_name: string;
+	mutable h_file_name: bytes;
 	h_gcc: bool;
 	h_linerec: bool;
 	h_strict: bool;
@@ -43,12 +43,12 @@ type handle = {
 let current_handle = ref {
 		h_interactive = false;
 		h_in_channel = stdin;
-		h_line = "";
-		h_buffer = "";
+		h_line =Bytes.empty;
+		h_buffer = Bytes.empty;
 		h_pos = 0;
 		h_lineno = 0;
 		h_out_channel = stdout;
-		h_file_name = "";
+		h_file_name =Bytes.empty;
 		h_gcc = true;
 		h_linerec = false;
 		h_strict = false;
@@ -72,32 +72,39 @@ let is_strict _ = (!current_handle).h_strict
 let pragma _ = (!current_handle).h_pragma
 
 let add_pragma p =
-	(!current_handle).h_pragma <- (curfile (), curline (), p) :: (pragma ())
+	(!current_handle).h_pragma <- (Bytes.to_string (curfile()), curline (), p) :: (pragma ())
 
 (*
  * Error handling
  *)
-let underline_error (buffer : string) (start : int) (stop : int) =
-	let len = String.length buffer in
+let underline_error (buffer : bytes) (start : int) (stop : int) =
+	let len = Bytes.length buffer in
 	let start' = max 0 start in
 	let stop' = max 1 stop in
-	(
-		(if start' > 0 then (String.sub buffer 0 start') else "")
-		^ "\027[4m"
+	(*
+		(if start' > 0 then (Bytes.sub buffer 0 start') else (Bytes.of_string ""))
+		^ (Bytes.of_string "\027[4m")
 		^ (if (stop' - start') <> 0
-			then (String.sub buffer start' (stop' - start' ) )
-			else ""
+			then (Bytes.sub buffer start' (stop' - start' ) )
+			else (Bytes.of_string "")
 		)
-		^ "\027[0m"
-		^ (if stop' < len then (String.sub buffer stop' (len - stop') ) else "")
-	)
+		^ (Bytes.of_string "\027[0m")
+		^ (if stop' < len then (Bytes.sub buffer stop' (len - stop') ) else "")
+	*)
+	let messstart =  (if start' > 0 then (Bytes.sub buffer 0 start') else (Bytes.of_string "")) in
+	let messmiddle=  (if (stop' - start') <> 0 then (Bytes.sub buffer start' (stop' - start' ) ) else (Bytes.of_string "")) in
+	let messend= (if stop' < len then (Bytes.sub buffer stop' (len - stop') ) else  (Bytes.of_string "")) in
+	let mess = Bytes.concat messstart [(Bytes.of_string "\027[4m"); messmiddle; (Bytes.of_string "\027[0m"); messend] in
+	 
+	Bytes.to_string mess
+	
 
 let display_error msg token_start token_end =
 	output_string (out_channel !current_handle) (
 		(if (interactive !current_handle)
 			then ""
 			else
-				(file_name !current_handle) ^ "["
+				(Bytes.to_string (file_name !current_handle)) ^ "["
 				^ (string_of_int (lineno !current_handle)) ^ "] "
 		)
 		^ msg ^ ": "
@@ -142,38 +149,38 @@ let keywords =
 		("_Imaginery", id (NAMED_TYPE "_Imaginery"));
 		("asm", id ASM);
 		("auto", id AUTO);
-		("break", fun _ -> BREAK (curfile(), curline()));
+		("break", fun _ -> BREAK (Bytes.to_string (curfile()), curline()));
 		("char", id CHAR);
-		("case", fun _ -> CASE (curfile(), curline()));
+		("case", fun _ -> CASE (Bytes.to_string (curfile()), curline()));
 		("const", id CONST);
-		("continue", fun _ -> CONTINUE (curfile(), curline()));
-		("default", fun _ -> DEFAULT (curfile(), curline()));
-		("do", fun _ -> DO (curfile(), curline()));
+		("continue", fun _ -> CONTINUE (Bytes.to_string (curfile()), curline()));
+		("default", fun _ -> DEFAULT (Bytes.to_string (curfile()), curline()));
+		("do", fun _ -> DO (Bytes.to_string (curfile()), curline()));
 		("double", id DOUBLE);
-		("else", fun _ -> ELSE (curfile(), curline()));
+		("else", fun _ -> ELSE (Bytes.to_string (curfile()), curline()));
 		("enum", id ENUM);
 		("extern", id EXTERN);
 		("float", id FLOAT);
-		("for", fun _ -> FOR (curfile(), curline()));
-		("goto", fun _ -> GOTO (curfile(), curline()));
-		("if", fun _ -> IF (curfile(), curline()));
+		("for", fun _ -> FOR (Bytes.to_string (curfile()), curline()));
+		("goto", fun _ -> GOTO (Bytes.to_string (curfile()), curline()));
+		("if", fun _ -> IF (Bytes.to_string (curfile()), curline()));
 		("inline", id INLINE);	(* C99 *)
 		("int", id INT);
 		("long", id LONG);
 		("register", id REGISTER);
 		("restrict", id RESTRICT);	(** Non-supported by GCC ??? *)
-		("return", fun _ -> RETURN (curfile(), curline()));
+		("return", fun _ -> RETURN (Bytes.to_string (curfile()), curline()));
 		("short", id SHORT);
 		("signed", id SIGNED);
 		("static", id STATIC);
 		("struct", id STRUCT);
-		("switch", fun _ -> SWITCH (curfile(), curline()));
+		("switch", fun _ -> SWITCH (Bytes.to_string (curfile()), curline()));
 		("typedef", id TYPEDEF);
 		("union", id UNION);
 		("unsigned", id UNSIGNED);
 		("void", id VOID);
 		("volatile", id VOLATILE);
-		("while", fun _ -> WHILE (curfile(), curline()));
+		("while", fun _ -> WHILE (Bytes.to_string (curfile()), curline()));
 	]
 
 (*** Specific GNU ***)
@@ -316,24 +323,24 @@ rule initial =
 	|		binnum			{CST_INT (Lexing.lexeme lexbuf)}
 
 	|		"!quit!"		{EOF}
-	|		"..."			{ELLIPSIS(curfile(), curline())}
-	|		"+="			{PLUS_EQ(curfile(), curline())}
-	|		"-="			{MINUS_EQ(curfile(), curline())}
-	|		"*="			{STAR_EQ(curfile(), curline())}
-	|		"/="			{SLASH_EQ(curfile(), curline())}
-	|		"%="			{PERCENT_EQ(curfile(), curline())}
-	|		"|="			{PIPE_EQ(curfile(), curline())}
-	|		"&="			{AND_EQ(curfile(), curline())}
-	|		"^="			{CIRC_EQ(curfile(), curline())}
-	|		"<<="			{INF_INF_EQ(curfile(), curline())}
-	|		">>="			{SUP_SUP_EQ(curfile(), curline())}
+	|		"..."			{ELLIPSIS(Bytes.to_string (curfile()),curline())}
+	|		"+="			{PLUS_EQ(Bytes.to_string (curfile()),curline())}
+	|		"-="			{MINUS_EQ(Bytes.to_string (curfile()),curline())}
+	|		"*="			{STAR_EQ(Bytes.to_string (curfile()),curline())}
+	|		"/="			{SLASH_EQ(Bytes.to_string (curfile()),curline())}
+	|		"%="			{PERCENT_EQ(Bytes.to_string (curfile()),curline())}
+	|		"|="			{PIPE_EQ(Bytes.to_string (curfile()),curline())}
+	|		"&="			{AND_EQ(Bytes.to_string (curfile()),curline())}
+	|		"^="			{CIRC_EQ(Bytes.to_string (curfile()),curline())}
+	|		"<<="			{INF_INF_EQ(Bytes.to_string (curfile()),curline())}
+	|		">>="			{SUP_SUP_EQ(Bytes.to_string (curfile()),curline())}
 	|		"<<"			{INF_INF}
 	|		">>"			{SUP_SUP}
 	|		"=="			{EQ_EQ}
 	|		"!="			{EXCLAM_EQ}
 	|		"<="			{INF_EQ}
 	|		">="			{SUP_EQ}
-	|		"="				{EQ(curfile(), curline())}
+	|		"="				{EQ(Bytes.to_string (curfile()),curline())}
 	|		"<"				{INF}
 	|		">"				{SUP}
 	|		"++"			{PLUS_PLUS}
@@ -350,18 +357,18 @@ rule initial =
 	|		'&'				{AND}
 	|		'|'				{PIPE}
 	|		'^'				{CIRC}
-	|		'?'				{QUEST(curfile(), curline())}
-	|		':'				{COLON(curfile(), curline())}
+	|		'?'				{QUEST(Bytes.to_string (curfile()),curline())}
+	|		':'				{COLON(Bytes.to_string (curfile()),curline())}
 	|		'~'				{TILDE}
 
-	|		'{'				{LBRACE(curfile(), curline())}
-	|		'}'				{RBRACE(curfile(), curline())}
-	|		'['				{LBRACKET(curfile(), curline())}
-	|		']'				{RBRACKET(curfile(), curline())}
-	|		'('				{LPAREN(curfile(), curline())}
-	|		')'				{RPAREN(curfile(), curline())}
-	|		';'				{SEMICOLON(curfile(), curline())}
-	|		','				{COMMA(curfile(), curline())}
+	|		'{'				{LBRACE(Bytes.to_string (curfile()),curline())}
+	|		'}'				{RBRACE(Bytes.to_string (curfile()),curline())}
+	|		'['				{LBRACKET(Bytes.to_string (curfile()),curline())}
+	|		']'				{RBRACKET(Bytes.to_string (curfile()),curline())}
+	|		'('				{LPAREN(Bytes.to_string (curfile()),curline())}
+	|		')'				{RPAREN(Bytes.to_string (curfile()),curline())}
+	|		';'				{SEMICOLON(Bytes.to_string (curfile()),curline())}
+	|		','				{COMMA(Bytes.to_string (curfile()),curline())}
 	|		'.'				{DOT}
 	|		"sizeof"		{SIZEOF}
 	|		ident			{scan_ident (Lexing.lexeme lexbuf)}
@@ -390,7 +397,7 @@ and line =
 and file =
 	parse '\n'				{initial lexbuf}
 	|	blank				{file lexbuf}
-	|	'"' [^ '"']* '"' 	{set_name (rem_quotes (Lexing.lexeme lexbuf));
+	|	'"' [^ '"']* '"' 	{set_name (Bytes.of_string(rem_quotes (Lexing.lexeme lexbuf)));
 							endline lexbuf}
 	|	_					{endline lexbuf}
 and endline =
@@ -419,36 +426,39 @@ and chr =
 							(Lexing.lexeme lexbuf) 1 1) in cur ^ (chr lexbuf)}
 	|		_				{let cur = Lexing.lexeme lexbuf in cur ^ (chr lexbuf)}
 
+
+
 and pragma =
 	parse	'\n'			{ "" }
-	|		_ 				{ let c = Lexing.lexeme lexbuf in c ^ (pragma lexbuf) }
+	|		_ 				{ let c = Lexing.lexeme lexbuf in  c ^ (pragma lexbuf) 	}
 
 {
 
 (*** get_buffer ***)
-let get_buffer (hr : handle ref) (dst : string) (len : int) : int =
+let get_buffer (hr : handle ref) (dst : bytes) (len : int) : int =
 	(*let (inter, chan, line, buffer, pos, lineno, out, name) = !hr in*)
 	let h = !hr in
 	try
 		let (bufferp, linep, posp, linenop) =
-			if h.h_buffer <> ""
+			if (*h.h_buffer <> ""*) Bytes.length h.h_buffer > 0
 			then (h.h_buffer, h.h_line , h.h_pos, h.h_lineno)
 			else
 				let buffer = (input_line h.h_in_channel) ^ "\n" in
 				(
-					buffer,
-					(if h.h_interactive then h.h_line ^ buffer else buffer),
-					(if h.h_interactive then h.h_pos else h.h_pos + (String.length h.h_line)),
+					(Bytes.of_string buffer),
+					(if h.h_interactive then Bytes.concat h.h_line [(Bytes.of_string buffer)] else (Bytes.of_string buffer)),
+					(if h.h_interactive then h.h_pos else h.h_pos + (Bytes.length h.h_line)),
 					h.h_lineno + 1
 				) in
 		(*let _ = print_endline ("-->" ^ linep) in*)
-		let bufl = String.length bufferp in
+		let bufl = Bytes.length bufferp in
 		let lenp = min len bufl in
 		let buffers = if bufl = lenp
-			then ""
-			else String.sub bufferp lenp (bufl - lenp) in
+			then Bytes.empty
+			else Bytes.sub bufferp lenp (bufl - lenp) in
 		begin
-			String.blit bufferp 0 dst 0 lenp;
+			 
+			Bytes.blit bufferp 0 dst 0 lenp;
 			h.h_line <- linep;
 			h.h_buffer <- buffers;
 			h.h_pos <- posp;

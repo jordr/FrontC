@@ -231,12 +231,12 @@ let parse args =
 			Clexer.init {
 				Clexer.h_interactive = !interactive;
 				Clexer.h_in_channel = real_input;
-				Clexer.h_line = "";
-				Clexer.h_buffer = "";
+				Clexer.h_line = Bytes.empty;
+				Clexer.h_buffer = Bytes.empty;
 				Clexer.h_pos = 0;
 				Clexer.h_lineno = 0;
 				Clexer.h_out_channel = !error;
-				Clexer.h_file_name = !file;
+				Clexer.h_file_name = Bytes.of_string !file;
 				Clexer.h_gcc = !gcc;
 				Clexer.h_linerec = !linerec;
 				Clexer.h_strict = !strict;

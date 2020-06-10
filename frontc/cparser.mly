@@ -169,7 +169,7 @@ let set_eline (file, line) expr =
 	@param _type	Type matching the source file/line pair. *)
 let set_tline _type =
 	if Clexer.linerec !Clexer.current_handle
-	then Cabs.TYPE_LINE (Clexer.curfile (), Clexer.curline(), _type)
+	then Cabs.TYPE_LINE ((Bytes.to_string (Clexer.curfile ())), Clexer.curline(), _type)
 	else _type
 	
 	
