@@ -362,8 +362,8 @@ and print_name_group (typ, sto, names) =
 
 
 (** Print a single name, that is, either a prototype, or a parameter.
-	@param (typ, sto, name)	Single name to display.
-	@param	Is it a parameter display ?
+	@param name	(the tuple) Single name to display.
+	@param param Is it a parameter display ?
  *)
 and print_single_name (typ, sto, name) param =
 	if sto <> NO_STORAGE then begin

@@ -292,7 +292,7 @@ match stat with
 (** test if there is statement after call
 @param stat			statement
 @param nameFunction 		string
-@ return bool
+@return bool
 *)
 and apCall stat nameFunction = match stat with
 	 COMPUTATION (e)-> not (e_call nameFunction e)

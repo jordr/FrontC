@@ -266,7 +266,7 @@ match stat with
 
 
 (** construct 4 list functions their caracteristics
-	@param		((_,_),list) 
+	\@param		((_,_),list)
 	@return 	list of list
 *)
 and egal_different lnamef linfo eComplexe eSimple eSans different = 
